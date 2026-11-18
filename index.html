@@ -1,0 +1,1132 @@
+<!DOCTYPE html>
+<html lang="th" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>บ้านชายหาด - ที่พักติดทะเล แหลมเจริญ หาดแสงจันทร์ ระยอง</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Prompt & Playfair Display -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,800;1,400&family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        ocean: {
+                            50: '#f0fdfa',
+                            100: '#ccfbf1',
+                            500: '#14b8a6',
+                            700: '#0f766e',
+                            800: '#115e59',
+                            900: '#134e4a',
+                        },
+                        sand: {
+                            50: '#fdfbf7',
+                            100: '#f7f2e7',
+                            200: '#ece0c8',
+                            500: '#d4a359',
+                            600: '#b88339',
+                        },
+                        deepnavy: '#0b192c'
+                    },
+                    fontFamily: {
+                        prompt: ['Prompt', 'sans-serif'],
+                        serif: ['Playfair Display', 'serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Prompt', sans-serif;
+            background-color: #f8fafc;
+            color: #1e293b;
+        }
+        .hero-bg {
+            background: linear-gradient(to bottom, rgba(11, 25, 44, 0.45), rgba(11, 25, 44, 0.75)), 
+                        url('https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=2000&q=80') center/cover no-repeat;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        .cal-day-disabled {
+            background-color: #f1f5f9;
+            color: #cbd5e1;
+            cursor: not-allowed;
+            text-decoration: line-through;
+        }
+        .cal-day-booking {
+            background-color: #fef3c7;
+            color: #b45309;
+            cursor: not-allowed;
+            border: 1px solid #fcd34d;
+        }
+        .cal-day-confirmed {
+            background-color: #ffe4e6;
+            color: #e11d48;
+            cursor: not-allowed;
+            border: 1px solid #fecdd3;
+        }
+        .cal-day-selected {
+            background-color: #0f766e !important;
+            color: #ffffff !important;
+            font-weight: 600;
+        }
+        .cal-day-in-range {
+            background-color: #ccfbf1 !important;
+            color: #0f766e !important;
+        }
+    </style>
+</head>
+<body class="antialiased min-h-screen flex flex-col selection:bg-ocean-500 selection:text-white">
+    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-3 max-w-sm w-full pointer-events-none"></div>
+
+    <header class="sticky top-0 z-40 bg-white/90 backdrop-blur-md shadow-sm border-b border-slate-100 transition-all">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-20">
+                <a href="#" class="flex items-center gap-3 group">
+                    <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-ocean-700 to-ocean-500 text-white flex items-center justify-center shadow-lg shadow-ocean-500/30 group-hover:scale-105 transition-transform">
+                        <i class="fa-solid font-bold fa-house-water text-xl"></i>
+                    </div>
+                    <div>
+                        <span class="font-serif font-bold text-2xl tracking-tight text-slate-900 block leading-none">บ้านชายหาด</span>
+                        <span class="text-xs font-medium text-ocean-700 tracking-widest uppercase">แหลมเจริญ หาดแสงจันทร์ ระยอง</span>
+                    </div>
+                </a>
+
+                <div class="hidden md:flex items-center gap-8 font-medium text-slate-600 text-sm">
+                    <a href="#about" class="hover:text-ocean-700 transition-colors">ไฮไลท์บ้านพัก</a>
+                    <a href="#gallery" class="hover:text-ocean-700 transition-colors">รูปภาพ</a>
+                    <a href="#booking-section" class="hover:text-ocean-700 transition-colors">เช็คปฏิทิน & จอง</a>
+                    <a href="https://www.facebook.com/BaanShineHeartRayong" target="_blank" rel="noopener noreferrer" class="hover:text-blue-600 transition-colors flex items-center gap-1.5 text-blue-600 font-semibold">
+                        <i class="fa-brands fa-facebook text-base"></i> Facebook Page
+                    </a>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <a href="#booking-section" class="inline-flex px-5 py-2.5 rounded-xl bg-gradient-to-r from-ocean-700 to-ocean-500 hover:from-ocean-800 hover:to-ocean-600 text-white font-medium text-sm shadow-md shadow-ocean-700/20 hover:shadow-lg transition-all transform hover:-translate-y-0.5">
+                        <i class="fa-regular fa-calendar-check mr-2 my-auto"></i> จองบ้านพัก
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow">
+        <section class="relative hero-bg min-h-[580px] flex items-center text-white py-20 px-4">
+            <div class="max-w-7xl mx-auto w-full text-center md:text-left grid md:grid-cols-12 gap-8 items-center">
+                <div class="md:col-span-8 space-y-6">
+                    <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-xs font-medium tracking-wide">
+                        <i class="fa-solid fa-location-dot text-amber-400"></i>
+                        <span>แหลมเจริญ - หาดแสงจันทร์ จ.ระยอง (รองรับ 6 - 14 ท่าน)</span>
+                    </div>
+                    <h1 class="font-serif text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight tracking-tight">
+                        บ้านชายหาด พูลวิลล่า <br class="hidden sm:inline"/>
+                        <span class="text-transparent bg-clip-text bg-gradient-to-r from-teal-200 via-sand-200 to-amber-200">ที่พักติดทะเล แหลมเจริญ หาดแสงจันทร์</span>
+                    </h1>
+                    <p class="text-slate-200 text-base sm:text-lg max-w-2xl font-light leading-relaxed">
+                        พักผ่อนสุดชิลล์ริมทะเลระยอง บ้านพักติดหาดส่วนตัว สระว่ายน้ำ บรรยากาศเงียบสงบ ราคาเดิมไม่มีบวกเพิ่มช่วงเทศกาลหรือวันหยุดพิเศษ
+                    </p>
+                    <div class="flex flex-wrap gap-4 pt-2 justify-center md:justify-start">
+                        <a href="#booking-section" class="px-7 py-3.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-semibold text-sm shadow-xl shadow-amber-500/25 transition-all transform hover:-translate-y-0.5 flex items-center gap-2">
+                            <i class="fa-solid fa-calendar-days"></i> เช็ควันว่าง & จองผ่านเว็บ
+                        </a>
+                        <a href="https://www.facebook.com/BaanShineHeartRayong" target="_blank" rel="noopener noreferrer" class="px-7 py-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white backdrop-blur-md font-medium text-sm transition-all flex items-center gap-2 shadow-lg">
+                            <i class="fa-brands fa-facebook text-lg"></i> ไปยัง เพจ Facebook
+                        </a>
+                    </div>
+                </div>
+
+                <div class="md:col-span-4">
+                    <div class="glass-card p-6 rounded-3xl text-slate-800 shadow-2xl border border-white/40 space-y-4">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <span class="text-xs uppercase tracking-wider text-slate-500 font-semibold">ราคาเริ่มต้น</span>
+                                <div class="text-3xl font-extrabold text-ocean-800">฿6,900 <span class="text-xs font-normal text-slate-500">/ คืน</span></div>
+                            </div>
+                            <span class="px-2.5 py-1 bg-teal-100 text-teal-800 text-xs font-bold rounded-lg">บ้านพัก 1 หลัง</span>
+                        </div>
+                        <hr class="border-slate-200/60">
+                        <ul class="text-xs space-y-2.5 text-slate-600">
+                            <li class="flex items-center gap-2.5"><i class="fa-solid fa-check text-ocean-500"></i> วันจันทร์ - พฤหัสบดี: <strong>฿6,900 / คืน</strong></li>
+                            <li class="flex items-center gap-2.5"><i class="fa-solid fa-check text-ocean-500"></i> วันศุกร์ - อาทิตย์: <strong>฿8,900 / คืน</strong></li>
+                            <li class="flex items-center gap-2.5"><i class="fa-solid fa-star text-amber-500"></i> <strong>พักได้ 6 - 14 ท่าน</strong> (ราคาเดียวคุ้มค่า)</li>
+                            <li class="flex items-center gap-2.5 text-emerald-700 font-semibold"><i class="fa-solid fa-shield-heart text-emerald-600"></i> ไม่มีค่าประกันความเสียหาย!</li>
+                            <li class="flex items-center gap-2.5 text-ocean-800 font-semibold"><i class="fa-solid fa-hand-holding-dollar text-ocean-600"></i> ไม่ต้องมัดจำ ชำระเงินวันเข้าพักได้เลย</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="about" class="py-12 bg-white border-b border-slate-100">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-6">
+                    <div class="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                        <div class="w-12 h-12 rounded-xl bg-ocean-100 text-ocean-700 flex items-center justify-center text-xl shrink-0">
+                            <i class="fa-solid fa-umbrella-beach"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-slate-800 text-base">ติดทะเล</h4>
+                            <p class="text-xs text-slate-500">แหลมเจริญ หาดแสงจันทร์</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                        <div class="w-12 h-12 rounded-xl bg-ocean-100 text-ocean-700 flex items-center justify-center text-xl shrink-0">
+                            <i class="fa-solid fa-water-ladder"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-slate-800 text-base">สระว่ายน้ำส่วนตัว</h4>
+                            <p class="text-xs text-slate-500">พร้อมพื้นที่พักผ่อนปาร์ตี้</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                        <div class="w-12 h-12 rounded-xl bg-ocean-100 text-ocean-700 flex items-center justify-center text-xl shrink-0">
+                            <i class="fa-solid fa-users"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-slate-800 text-base">เข้าพัก 6-14 ท่าน</h4>
+                            <p class="text-xs text-slate-500">รองรับกลุ่มเพื่อน & ครอบครัว</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                        <div class="w-12 h-12 rounded-xl bg-ocean-100 text-ocean-700 flex items-center justify-center text-xl shrink-0">
+                            <i class="fa-solid fa-tag"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-slate-800 text-base">ราคาตรง ไม่บวกเพิ่ม</h4>
+                            <p class="text-xs text-slate-500">เทศกาล & วันหยุดนักขัตฤกษ์</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="booking-section" class="py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+            <div class="text-center max-w-3xl mx-auto mb-12 space-y-3">
+                <span class="px-3.5 py-1 rounded-full bg-ocean-100 text-ocean-800 text-xs font-semibold tracking-wide uppercase">Real-time Calendar & Booking</span>
+                <h2 class="font-serif text-3xl sm:text-4xl font-extrabold text-slate-900">ตรวจสอบวันว่างและทำการจองบ้านพัก</h2>
+                <p class="text-slate-600 text-sm sm:text-base">เลือกวันที่เข้าพักในปฏิทิน โดยวันที่เลือก 2 วันหมายถึงเข้าพัก 2 คืน ระบบจะคำนวณวันเช็คเอาท์และราคารวมให้อัตโนมัติ</p>
+            </div>
+
+            <div class="grid lg:grid-cols-12 gap-8 items-start">
+                <div class="lg:col-span-7 bg-white rounded-3xl p-6 shadow-xl border border-slate-200/70 space-y-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 id="calendar-month-year" class="font-serif font-bold text-xl text-slate-900">กำลังโหลดปฏิทิน...</h3>
+                            <p class="text-xs text-slate-500 mt-0.5">คลิกวันเข้าพักคืนแรก แล้วเลือกวันสุดท้ายที่ต้องการพัก (เลือก 2 วัน = 2 คืน)</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button onclick="changeMonth(-1)" class="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition-colors">
+                                <i class="fa-solid fa-chevron-left text-xs"></i>
+                            </button>
+                            <button onclick="resetMonthToCurrent()" class="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-colors">
+                                เดือนนี้
+                            </button>
+                            <button onclick="changeMonth(1)" class="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition-colors">
+                                <i class="fa-solid fa-chevron-right text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-wrap items-center gap-4 text-xs pt-2 border-t border-slate-100">
+                        <div class="flex items-center gap-2">
+                            <span class="w-3.5 h-3.5 rounded-md bg-white border border-slate-300 inline-block shadow-sm"></span>
+                            <span class="text-slate-600">ว่าง (พร้อมจอง)</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="w-3.5 h-3.5 rounded-md bg-amber-100 border border-amber-300 inline-block"></span>
+                            <span class="text-slate-600">รอแอดมินยืนยัน</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="w-3.5 h-3.5 rounded-md bg-rose-100 border border-rose-300 inline-block"></span>
+                            <span class="text-slate-600">ยืนยันแล้ว</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="w-3.5 h-3.5 rounded-md bg-ocean-700 inline-block"></span>
+                            <span class="text-slate-600">คืนที่ท่านเลือก</span>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="grid grid-cols-7 text-center font-bold text-xs text-slate-400 py-2 border-b border-slate-100">
+                            <div class="text-rose-500">อา.</div>
+                            <div>จ.</div>
+                            <div>อ.</div>
+                            <div>พ.</div>
+                            <div>พฤ.</div>
+                            <div>ศ.</div>
+                            <div class="text-ocean-700">ส.</div>
+                        </div>
+                        <div id="calendar-days-grid" class="grid grid-cols-7 gap-1.5 pt-3"></div>
+                    </div>
+
+                    <div class="p-4 rounded-2xl bg-amber-50 border border-amber-200/60 text-amber-900 text-xs space-y-1">
+                        <div class="font-semibold flex items-center gap-2">
+                            <i class="fa-solid fa-circle-info text-amber-600"></i> เงื่อนไขเวลาเข้าพัก
+                        </div>
+                        <p class="text-amber-800/90 leading-relaxed">
+                            เช็คอิน (Check-in) เวลา 14:00 น. เป็นต้นไป | เช็คเอาท์ (Check-out) ไม่เกิน 11:30 น. ของวันถัดไป
+                        </p>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-5 bg-white rounded-3xl p-6 shadow-xl border border-slate-200/70 space-y-6">
+                    <div class="border-b border-slate-100 pb-4">
+                        <h3 class="font-serif font-bold text-xl text-slate-900 flex items-center gap-2">
+                            <i class="fa-solid fa-file-signature text-ocean-600"></i> กรอกข้อมูลการจอง
+                        </h3>
+                        <p class="text-xs text-slate-500 mt-1">กรุณากรอกรายละเอียดเพื่อทำการยืนยันสิทธิ์เข้าพัก</p>
+                    </div>
+
+                    <form id="booking-form" onsubmit="handleFormSubmit(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">วันเข้าพักคืนแรก (Check-in)</label>
+                            <input type="date" id="input-checkin" required onchange="onManualDateChange()" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-ocean-500 focus:outline-none">
+                            <p class="text-[11px] text-slate-500 mt-1">วันเช็คเอาท์จะเป็นวันถัดจากคืนสุดท้ายที่เลือก</p>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">ชื่อ - นามสกุล ผู้จอง <span class="text-rose-500">*</span></label>
+                            <input type="text" id="cust-name" required placeholder="ตัวอย่าง: สมชาย ใจดี" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-ocean-500 focus:outline-none">
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">เบอร์โทรศัพท์ติดต่อ <span class="text-rose-500">*</span></label>
+                                <input type="tel" id="cust-phone" required placeholder="081-XXXXXXX" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-ocean-500 focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">จำนวนผู้เข้าพัก</label>
+                                <select id="cust-guests" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-ocean-500 focus:outline-none">
+                                    <option value="6-8 ท่าน">6 - 8 ท่าน</option>
+                                    <option value="9-11 ท่าน">9 - 11 ท่าน</option>
+                                    <option value="12-14 ท่าน" selected>12 - 14 ท่าน (ตามมาตรฐานบ้านพัก)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">คำขอเพิ่มเติม (ถ้ามี)</label>
+                            <textarea id="cust-notes" rows="2" placeholder="เช่น ขอเตียงเด็กอ่อน, จัดเตรียมเตาปิ้งย่างล่วงหน้า" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-ocean-500 focus:outline-none resize-none"></textarea>
+                        </div>
+
+                        <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2.5">
+                            <div class="flex justify-between text-xs text-slate-600">
+                                <span>จำนวนคืนที่เข้าพัก:</span>
+                                <span id="summary-nights" class="font-bold text-slate-900">0 คืน</span>
+                            </div>
+                            <div class="flex justify-between text-xs text-slate-600">
+                                <span>วันเช็คเอาท์ (อัตโนมัติ):</span>
+                                <span id="summary-checkout" class="font-semibold text-slate-900">-</span>
+                            </div>
+                            <div class="flex justify-between text-xs text-slate-600">
+                                <span>ค่าห้องพักรวม:</span>
+                                <span id="summary-room-price" class="font-semibold text-slate-900">฿0</span>
+                            </div>
+                            <div class="flex justify-between text-xs text-slate-600">
+                                <span>ค่าประกันความเสียหาย:</span>
+                                <span class="font-bold text-emerald-600">฿0 (ไม่มีค่าประกัน)</span>
+                            </div>
+                            <div class="flex justify-between text-xs text-slate-600">
+                                <span>เงินมัดจำล่วงหน้า:</span>
+                                <span class="font-bold text-emerald-600">฿0 (จ่ายวันเข้าพัก)</span>
+                            </div>
+                            <hr class="border-slate-200">
+                            <div class="flex justify-between items-center text-sm font-bold text-slate-900 pt-1">
+                                <span>ยอดชำระวันเข้าพัก:</span>
+                                <span id="summary-total-price" class="text-xl text-ocean-700 font-extrabold">฿0</span>
+                            </div>
+                        </div>
+
+                        <button type="submit" id="btn-submit-booking" disabled class="w-full py-3.5 px-4 rounded-xl bg-slate-300 text-slate-500 font-bold text-sm shadow-none transition-all cursor-not-allowed">
+                            กรุณาเลือกวันเข้าพักในปฏิทิน
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+        <section id="gallery" class="py-16 bg-slate-100/70 border-t border-slate-200/60">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+                <div class="text-center max-w-2xl mx-auto">
+                    <h2 class="font-serif text-3xl font-extrabold text-slate-900">ภาพบรรยากาศวิลล่า</h2>
+                    <p class="text-slate-500 text-sm mt-1">สัมผัสความหรูหราผ่อนคลายกับมุมพักผ่อนรอบบ้านพัก</p>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div class="rounded-2xl overflow-hidden shadow-md group relative">
+                        <img src="https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=800&q=80" alt="Private Pool" class="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-500">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4 text-white font-medium text-sm">
+                            สระว่ายน้ำส่วนตัววิวทะเล 180 องศา
+                        </div>
+                    </div>
+                    <div class="rounded-2xl overflow-hidden shadow-md group relative">
+                        <img src="https://images.unsplash.com/photo-1613977257363-707ba9348227?auto=format&fit=crop&w=800&q=80" alt="Living Area" class="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-500">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4 text-white font-medium text-sm">
+                            ห้องนั่งเล่นโอ่อ่าสไตล์โมเดิร์นทรอปิคอล
+                        </div>
+                    </div>
+                    <div class="rounded-2xl overflow-hidden shadow-md group relative">
+                        <img src="https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=800&q=80" alt="Master Bedroom" class="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-500">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4 text-white font-medium text-sm">
+                            ห้องนอนมาสเตอร์พร้อมวิวทะเลยามเช้า
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-slate-900 text-slate-400 py-12 border-t border-slate-800 text-xs">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-4">
+            <div class="flex items-center justify-center gap-2 text-white font-serif font-bold text-lg">
+                <i class="fa-solid fa-house-water text-ocean-500"></i> บ้านชายหาด ที่พักติดทะเล แหลมเจริญ หาดแสงจันทร์ ระยอง
+            </div>
+            <p class="max-w-md mx-auto text-slate-400">
+                แหลมเจริญ หาดแสงจันทร์ อ.เมือง จ.ระยอง
+            </p>
+            <div>
+                <a href="https://www.facebook.com/BaanShineHeartRayong" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold transition-all">
+                    <i class="fa-brands fa-facebook"></i> ติดตามหรือสอบถามทาง Facebook Page
+                </a>
+            </div>
+            <p class="text-slate-600">© 2026 บ้านชายหาด ระยอง. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <div id="confirm-modal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 relative space-y-5">
+            <div class="text-center space-y-2">
+                <div class="w-16 h-16 rounded-full bg-amber-100 text-amber-600 mx-auto flex items-center justify-center text-3xl">
+                    <i class="fa-solid fa-clipboard-question"></i>
+                </div>
+                <h3 class="text-xl font-bold text-slate-900">ยืนยันข้อมูลการจองบ้านพัก</h3>
+                <p class="text-xs text-slate-500">กรุณาตรวจสอบความถูกต้องของข้อมูลก่อนยืนยันการจอง</p>
+            </div>
+
+            <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 text-xs space-y-2.5">
+                <div class="flex justify-between"><span class="text-slate-500">ชื่อผู้จอง:</span><span id="conf-name" class="font-bold text-slate-800"></span></div>
+                <div class="flex justify-between"><span class="text-slate-500">เบอร์โทรศัพท์:</span><span id="conf-phone" class="font-bold text-slate-800"></span></div>
+                <div class="flex justify-between"><span class="text-slate-500">วันเช็คอิน:</span><span id="conf-checkin" class="font-bold text-slate-800"></span></div>
+                <div class="flex justify-between"><span class="text-slate-500">วันเช็คเอาท์:</span><span id="conf-checkout" class="font-bold text-slate-800"></span></div>
+                <div class="flex justify-between"><span class="text-slate-500">จำนวนคืน:</span><span id="conf-nights" class="font-bold text-slate-800"></span></div>
+                <div class="flex justify-between"><span class="text-slate-500">จำนวนผู้เข้าพัก:</span><span id="conf-guests" class="font-bold text-slate-800"></span></div>
+                <hr class="border-slate-200">
+                <div class="flex justify-between text-sm font-bold text-slate-900"><span>ยอดชำระทั้งหมด:</span><span id="conf-total" class="text-ocean-700 font-extrabold text-base"></span></div>
+            </div>
+
+            <div class="flex gap-3 pt-2">
+                <button type="button" onclick="closeConfirmModal()" id="btn-cancel-confirm" class="w-1/2 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition-all">
+                    แก้ไขข้อมูล
+                </button>
+                <button type="button" onclick="proceedBooking()" id="btn-proceed-confirm" class="w-1/2 py-3 bg-ocean-700 hover:bg-ocean-800 text-white font-bold rounded-xl text-xs shadow-md transition-all flex items-center justify-center gap-1">
+                    <span>ยืนยันการจอง</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="receipt-modal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 relative space-y-5 animate-fade-in">
+            <button onclick="closeReceiptModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <div class="text-center space-y-2">
+                <div class="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 mx-auto flex items-center justify-center text-3xl">
+                    <i class="fa-solid fa-circle-check"></i>
+                </div>
+                <h3 class="text-2xl font-bold text-emerald-600">จองสำเร็จ</h3>
+                <p class="text-sm font-semibold text-slate-700">แอดมินจะติดต่อกลับเพื่อยืนยันรายละเอียดอีกครั้ง</p>
+                <p class="text-xs text-slate-500 pt-1">รหัสอ้างอิงการจอง: <strong id="rec-ref" class="text-ocean-700 font-mono">B-001</strong></p>
+            </div>
+
+            <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 text-xs space-y-2.5">
+                <div class="flex justify-between"><span class="text-slate-500">ชื่อผู้จอง:</span><span id="rec-name" class="font-bold text-slate-800"></span></div>
+                <div class="flex justify-between"><span class="text-slate-500">เบอร์โทรศัพท์:</span><span id="rec-phone" class="font-bold text-slate-800"></span></div>
+                <div class="flex justify-between"><span class="text-slate-500">วันเช็คอิน:</span><span id="rec-checkin" class="font-bold text-slate-800"></span></div>
+                <div class="flex justify-between"><span class="text-slate-500">วันเช็คเอาท์:</span><span id="rec-checkout" class="font-bold text-slate-800"></span></div>
+                <div class="flex justify-between"><span class="text-slate-500">จำนวนผู้เข้าพัก:</span><span id="rec-guests" class="font-bold text-slate-800"></span></div>
+                <div class="flex justify-between"><span class="text-slate-500">ค่าประกันความเสียหาย:</span><span class="font-bold text-emerald-600">฿0 (ไม่มี)</span></div>
+                <hr class="border-slate-200">
+                <div class="flex justify-between text-sm font-bold text-slate-900"><span>ยอดชำระวันเข้าพัก:</span><span id="rec-deposit" class="text-ocean-700 font-extrabold"></span></div>
+            </div>
+
+            <div class="text-center space-y-3">
+                <p class="text-[12px] text-emerald-700 bg-emerald-50 p-3 rounded-xl border border-emerald-200 font-medium">
+                    <i class="fa-solid fa-headset mr-1"></i> จองสำเร็จ แอดมินจะติดต่อกลับตามเบอร์โทรศัพท์ที่ท่านระบุไว้โดยเร็วที่สุด
+                </p>
+                <button onclick="closeReceiptModal()" class="w-full py-3 bg-ocean-700 hover:bg-ocean-800 text-white font-bold rounded-xl text-xs shadow-md transition-all">
+                    ตกลง & ปิดหน้าต่าง
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const GOOGLE_SHEET_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbzdkzWe1A2i4rr5tIFxgD9KZap4kti0gxthx1NmtqHeGUf8rdrvH_M9HAqYQiNjzsc6Kw/exec";
+
+        let bookings = [];
+        let viewYear = new Date().getFullYear();
+        let viewMonth = new Date().getMonth();
+
+        let selectedCheckInDate = null;
+        let selectedCheckOutDate = null;
+        let pendingBookingData = null;
+
+        const WEEKDAY_RATE = 6900;
+        const WEEKEND_RATE = 8900;
+        const DEPOSIT_FEE = 0;
+
+        const LOCAL_STORAGE_KEY = 'baanshaihad_bookings_cache';
+
+        function initInitialData() {
+            const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
+            if (stored) {
+                try {
+                    bookings = normalizeBookingsPayload(JSON.parse(stored));
+                    saveBookings();
+                } catch (e) {
+                    bookings = [];
+                }
+            } else {
+                bookings = [];
+            }
+        }
+
+        function saveBookings() {
+            const availability = bookings.map(({ checkIn, checkOut, status }) => ({ checkIn, checkOut, status }));
+            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(availability));
+        }
+
+        function parseDateSafe(value) {
+            if (!value || typeof value !== 'string') return null;
+
+            const clean = value.trim();
+            if (!clean || !/^\d{4}-\d{2}-\d{2}$/.test(clean)) {
+                return null;
+            }
+
+            const parsed = new Date(clean + 'T00:00:00');
+            return Number.isNaN(parsed.getTime()) ? null : parsed;
+        }
+
+        function normalizeBookingRecord(record) {
+            if (!record || typeof record !== 'object') return null;
+
+            const candidateCheckIn = record.checkIn || record.checkin || record.startDate || record['Check-in'] || record['Check In'] || record['วันที่เข้าพัก'] || record['checkin_date'] || record['start_date'];
+            const candidateCheckOut = record.checkOut || record.checkout || record.endDate || record['Check-out'] || record['Check Out'] || record['วันที่ออก'] || record['checkout_date'] || record['end_date'];
+            const candidateStatus = record.status || 'confirmed';
+
+            const safeCheckIn = String(candidateCheckIn || '').trim();
+            const safeCheckOut = String(candidateCheckOut || '').trim();
+
+            if (!safeCheckIn || !safeCheckOut || !parseDateSafe(safeCheckIn) || !parseDateSafe(safeCheckOut)) {
+                return null;
+            }
+
+            return {
+                ...record,
+                checkIn: safeCheckIn,
+                checkOut: safeCheckOut,
+                status: candidateStatus
+            };
+        }
+
+        function normalizeBookingsPayload(payload) {
+            if (Array.isArray(payload)) {
+                return payload.map(normalizeBookingRecord).filter(Boolean);
+            }
+
+            if (payload && typeof payload === 'object') {
+                const candidates = [
+                    payload.data,
+                    payload.rows,
+                    payload.bookings,
+                    payload.records,
+                    payload.items,
+                    payload.results
+                ];
+
+                for (const candidate of candidates) {
+                    const result = normalizeBookingsPayload(candidate);
+                    if (result.length > 0) return result;
+                }
+
+                const singleRecord = normalizeBookingRecord(payload);
+                return singleRecord ? [singleRecord] : [];
+            }
+
+            if (typeof payload === 'string') {
+                try {
+                    return normalizeBookingsPayload(JSON.parse(payload));
+                } catch (e) {
+                    return [];
+                }
+            }
+
+            return [];
+        }
+
+        async function loadBookingsFromSheets() {
+            if (!GOOGLE_SHEET_WEBAPP_URL || GOOGLE_SHEET_WEBAPP_URL.includes("YOUR_GOOGLE_APPS_SCRIPT")) {
+                showToast('ยังไม่ได้ตั้งค่า Google Sheets สำหรับตรวจสอบวันว่าง', 'error');
+                return;
+            }
+
+            try {
+                const result = await fetchBookingsFromSheets();
+                if (!result || result.status !== 'success' || !Array.isArray(result.data)) {
+                    throw new Error(result && result.message ? result.message : 'Invalid Google Sheets response');
+                }
+
+                bookings = normalizeBookingsPayload(result.data);
+                saveBookings();
+                renderCalendar();
+            } catch (err) {
+                console.error('ไม่สามารถดึงข้อมูลล่าสุดจาก Google Sheets ได้:', err);
+                showToast('โหลดข้อมูลวันว่างไม่สำเร็จ กรุณาลองใหม่อีกครั้ง', 'error');
+            }
+        }
+
+        function fetchBookingsFromSheets() {
+            return new Promise((resolve, reject) => {
+                const callbackName = `bshBookings_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+                const script = document.createElement('script');
+                const timeout = setTimeout(() => {
+                    cleanup();
+                    reject(new Error('Google Sheets request timed out'));
+                }, 15000);
+
+                function cleanup() {
+                    clearTimeout(timeout);
+                    delete window[callbackName];
+                    script.remove();
+                }
+
+                window[callbackName] = result => {
+                    cleanup();
+                    resolve(result);
+                };
+                script.onerror = () => {
+                    cleanup();
+                    reject(new Error('Google Sheets request failed'));
+                };
+                const separator = GOOGLE_SHEET_WEBAPP_URL.includes('?') ? '&' : '?';
+                script.src = `${GOOGLE_SHEET_WEBAPP_URL}${separator}action=bookings&callback=${callbackName}&_=${Date.now()}`;
+                document.head.appendChild(script);
+            });
+        }
+
+        function submitBookingToSheets(booking) {
+            return new Promise((resolve, reject) => {
+                const nonce = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+                const frame = document.createElement('iframe');
+                const form = document.createElement('form');
+                const frameName = `bshBooking_${nonce.replace(/[^a-zA-Z0-9]/g, '')}`;
+                let timeout;
+
+                frame.name = frameName;
+                frame.hidden = true;
+                form.method = 'POST';
+                form.action = GOOGLE_SHEET_WEBAPP_URL;
+                form.target = frameName;
+                form.hidden = true;
+
+                const payloadInput = document.createElement('input');
+                payloadInput.type = 'hidden';
+                payloadInput.name = 'payload';
+                payloadInput.value = JSON.stringify(booking);
+
+                const nonceInput = document.createElement('input');
+                nonceInput.type = 'hidden';
+                nonceInput.name = 'nonce';
+                nonceInput.value = nonce;
+                form.append(payloadInput, nonceInput);
+
+                function cleanup() {
+                    clearTimeout(timeout);
+                    window.removeEventListener('message', handleResponse);
+                    form.remove();
+                    frame.remove();
+                }
+
+                function handleResponse(event) {
+                    const message = event.data;
+                    if (!message || message.type !== 'bsh-booking-result' || message.nonce !== nonce) return;
+
+                    cleanup();
+                    resolve(message.result);
+                }
+
+                window.addEventListener('message', handleResponse);
+                timeout = setTimeout(() => {
+                    cleanup();
+                    reject(new Error('Google Sheets booking request timed out'));
+                }, 45000);
+
+                document.body.append(frame, form);
+                try {
+                    form.submit();
+                } catch (err) {
+                    cleanup();
+                    reject(err);
+                }
+            });
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            initInitialData();
+            renderCalendar();
+            loadBookingsFromSheets();
+
+            const todayStr = formatDateStr(new Date());
+            document.getElementById('input-checkin').min = todayStr;
+
+            window.setInterval(() => {
+                if (!document.hidden) loadBookingsFromSheets();
+            }, 60000);
+        });
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) loadBookingsFromSheets();
+        });
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+
+            let bgClass = 'bg-slate-900 text-white';
+            let icon = 'fa-circle-info text-cyan-400';
+
+            if (type === 'success') {
+                bgClass = 'bg-emerald-900 text-white border border-emerald-700';
+                icon = 'fa-circle-check text-emerald-400';
+            } else if (type === 'error') {
+                bgClass = 'bg-rose-900 text-white border border-rose-700';
+                icon = 'fa-triangle-exclamation text-rose-400';
+            }
+
+            toast.className = `${bgClass} p-4 rounded-2xl shadow-xl text-xs font-medium flex items-center gap-3 transition-all transform translate-y-2 opacity-0 pointer-events-auto`;
+            toast.innerHTML = `<i class="fa-solid ${icon} text-base shrink-0"></i> <span>${message}</span>`;
+
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            }, 10);
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+
+        function formatDateStr(dateObj) {
+            const y = dateObj.getFullYear();
+            const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+            const d = String(dateObj.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        }
+
+        function parseDateStr(str) {
+            const [y, m, d] = str.split('-').map(Number);
+            return new Date(y, m - 1, d);
+        }
+
+        function getNextDateStr(dateStr) {
+            const date = parseDateStr(dateStr);
+            date.setDate(date.getDate() + 1);
+            return formatDateStr(date);
+        }
+
+        function getThaiMonthName(monthIdx) {
+            const months = [
+                'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+                'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
+            ];
+            return months[monthIdx];
+        }
+
+        function changeMonth(delta) {
+            viewMonth += delta;
+            if (viewMonth < 0) {
+                viewMonth = 11;
+                viewYear--;
+            } else if (viewMonth > 11) {
+                viewMonth = 0;
+                viewYear++;
+            }
+            renderCalendar();
+        }
+
+        function resetMonthToCurrent() {
+            const now = new Date();
+            viewYear = now.getFullYear();
+            viewMonth = now.getMonth();
+            renderCalendar();
+        }
+
+        function getBookingStatusForDate(dateStr) {
+            const parsedDate = parseDateSafe(dateStr);
+            if (!parsedDate) return null;
+
+            const checkTime = parsedDate.getTime();
+            const matchingStatuses = bookings.filter(b => {
+                if (!b || isCancelledBookingStatus(b.status)) return false;
+
+                const inDate = parseDateSafe(b.checkIn);
+                const outDate = parseDateSafe(b.checkOut);
+                if (!inDate || !outDate) return false;
+
+                const inTime = inDate.getTime();
+                const outTime = outDate.getTime();
+                return checkTime >= inTime && checkTime < outTime;
+            }).map(b => String(b.status || 'confirmed').trim().toLowerCase());
+
+            if (matchingStatuses.includes('confirmed')) return 'confirmed';
+            if (matchingStatuses.includes('booking')) return 'booking';
+            return matchingStatuses[0] || null;
+        }
+
+        function isCancelledBookingStatus(status) {
+            return ['cancel', 'cancelled', 'canceled'].includes(String(status || '').trim().toLowerCase());
+        }
+
+        function isDateBooked(dateStr) {
+            return getBookingStatusForDate(dateStr) !== null;
+        }
+
+        function hasBookedDateInRange(startStr, endStr) {
+            const startDate = parseDateSafe(startStr);
+            const endDate = parseDateSafe(endStr);
+            if (!startDate || !endDate || startDate >= endDate) return false;
+
+            let curr = new Date(startDate);
+            while (curr < endDate) {
+                const cStr = formatDateStr(curr);
+                if (isDateBooked(cStr)) {
+                    return true;
+                }
+                curr.setDate(curr.getDate() + 1);
+            }
+            return false;
+        }
+
+        function renderCalendar() {
+            const titleEl = document.getElementById('calendar-month-year');
+            titleEl.textContent = `${getThaiMonthName(viewMonth)} ${viewYear + 543}`;
+
+            const grid = document.getElementById('calendar-days-grid');
+            grid.innerHTML = '';
+
+            const firstDay = new Date(viewYear, viewMonth, 1).getDay();
+            const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+            const todayStr = formatDateStr(new Date());
+
+            for (let i = 0; i < firstDay; i++) {
+                const emptyCell = document.createElement('div');
+                emptyCell.className = 'h-14 sm:h-16 rounded-2xl bg-slate-50/50';
+                grid.appendChild(emptyCell);
+            }
+
+            for (let day = 1; day <= daysInMonth; day++) {
+                const currentDate = new Date(viewYear, viewMonth, day);
+                const dateStr = formatDateStr(currentDate);
+                const bookingStatus = getBookingStatusForDate(dateStr);
+                const isBooked = bookingStatus !== null;
+                const isPast = dateStr < todayStr;
+                const dayOfWeek = currentDate.getDay();
+                const isWeekendRate = dayOfWeek === 0 || dayOfWeek === 5 || dayOfWeek === 6;
+
+                const dayCell = document.createElement('button');
+                dayCell.type = 'button';
+                
+                let baseClass = 'h-14 sm:h-16 rounded-2xl flex flex-col justify-between p-2 border text-left transition-all relative overflow-hidden group font-medium text-xs ';
+                
+                if (bookingStatus === 'booking') {
+                    baseClass += 'cal-day-booking shadow-inner';
+                } else if (isBooked) {
+                    baseClass += 'cal-day-confirmed shadow-inner';
+                } else if (isPast) {
+                    baseClass += 'cal-day-disabled border-slate-200';
+                } else {
+                    baseClass += 'bg-white hover:border-ocean-500 hover:shadow-md border-slate-200/80 text-slate-800';
+                }
+
+                if (selectedCheckInDate && selectedCheckOutDate && dateStr >= selectedCheckInDate && dateStr < selectedCheckOutDate) {
+                    baseClass += ' cal-day-selected ring-2 ring-ocean-600 shadow-lg';
+                }
+
+                dayCell.className = baseClass;
+
+                const priceBadge = !isPast && !isBooked ? 
+                    `<span class="text-[9px] ${isWeekendRate ? 'text-amber-600 font-bold' : 'text-slate-500'}">${isWeekendRate ? '฿8.9k' : '฿6.9k'}</span>` : '';
+
+                const statusLabel = bookingStatus === 'booking'
+                    ? '<span class="text-[9px] font-bold text-amber-700">รอยืนยัน</span>'
+                    : bookingStatus === 'confirmed'
+                        ? '<span class="text-[9px] font-bold text-rose-600">ยืนยันแล้ว</span>'
+                        : isBooked
+                            ? '<span class="text-[9px] font-bold text-rose-600">จองแล้ว</span>'
+                            : priceBadge;
+
+                dayCell.innerHTML = `
+                    <div class="flex justify-between items-start w-full">
+                        <span class="font-bold text-sm ${isWeekendRate && !isBooked && !isPast ? 'text-ocean-700' : ''}">${day}</span>
+                        ${statusLabel}
+                    </div>
+                `;
+
+                if (!isPast && !isBooked) {
+                    dayCell.onclick = () => handleDateClick(dateStr);
+                } else if (isBooked) {
+                    dayCell.onclick = () => showToast('วันที่เลือกมีผู้จองแล้ว กรุณาเลือกวันอื่น', 'error');
+                }
+
+                grid.appendChild(dayCell);
+            }
+        }
+
+        function handleDateClick(dateStr) {
+            if (!selectedCheckInDate) {
+                selectedCheckInDate = dateStr;
+                selectedCheckOutDate = getNextDateStr(dateStr);
+                showToast(`เลือกวันเข้าพักคืนแรก: ${dateStr}`, 'info');
+            } else if (dateStr <= selectedCheckInDate) {
+                selectedCheckInDate = dateStr;
+                selectedCheckOutDate = getNextDateStr(dateStr);
+                showToast(`เปลี่ยนวันเข้าพักคืนแรกเป็น: ${dateStr}`, 'info');
+            } else if (hasBookedDateInRange(selectedCheckInDate, getNextDateStr(dateStr))) {
+                showToast('ช่วงคืนที่เลือกมีวันที่ถูกจองแล้ว กรุณาเลือกช่วงใหม่', 'error');
+                selectedCheckInDate = dateStr;
+                selectedCheckOutDate = getNextDateStr(dateStr);
+            } else {
+                selectedCheckOutDate = getNextDateStr(dateStr);
+                const nights = getNightsCount(selectedCheckInDate, selectedCheckOutDate);
+                showToast(`เลือกเข้าพัก ${nights} คืน`, 'success');
+            }
+
+            syncInputsWithSelection();
+            renderCalendar();
+            calculateTotalPrice();
+        }
+
+        function syncInputsWithSelection() {
+            document.getElementById('input-checkin').value = selectedCheckInDate || '';
+        }
+
+        function onManualDateChange() {
+            const cin = document.getElementById('input-checkin').value;
+            selectedCheckInDate = cin || null;
+            selectedCheckOutDate = selectedCheckInDate ? getNextDateStr(selectedCheckInDate) : null;
+
+            if (selectedCheckInDate && hasBookedDateInRange(selectedCheckInDate, selectedCheckOutDate)) {
+                showToast('วันที่เข้าพักคืนแรกมีผู้จองแล้ว กรุณาเลือกวันอื่น', 'error');
+                selectedCheckInDate = null;
+                selectedCheckOutDate = null;
+                document.getElementById('input-checkin').value = '';
+            }
+
+            renderCalendar();
+            calculateTotalPrice();
+        }
+
+        function calculateTotalPrice() {
+            const btnSubmit = document.getElementById('btn-submit-booking');
+            const elemNights = document.getElementById('summary-nights');
+            const elemCheckOut = document.getElementById('summary-checkout');
+            const elemRoomPrice = document.getElementById('summary-room-price');
+            const elemTotal = document.getElementById('summary-total-price');
+
+            if (!selectedCheckInDate || !selectedCheckOutDate) {
+                elemNights.textContent = '0 คืน';
+                elemCheckOut.textContent = '-';
+                elemRoomPrice.textContent = '฿0';
+                elemTotal.textContent = '฿0';
+                btnSubmit.disabled = true;
+                btnSubmit.className = 'w-full py-3.5 px-4 rounded-xl bg-slate-200 text-slate-400 font-bold text-sm cursor-not-allowed';
+                btnSubmit.textContent = 'กรุณาเลือกวันเข้าพักในปฏิทิน';
+                return 0;
+            }
+
+            let curr = parseDateStr(selectedCheckInDate);
+            const end = parseDateStr(selectedCheckOutDate);
+            let nights = 0;
+            let roomTotal = 0;
+
+            while (curr < end) {
+                nights++;
+                const dayOfWeek = curr.getDay();
+                if (dayOfWeek === 0 || dayOfWeek === 5 || dayOfWeek === 6) {
+                    roomTotal += WEEKEND_RATE;
+                } else {
+                    roomTotal += WEEKDAY_RATE;
+                }
+                curr.setDate(curr.getDate() + 1);
+            }
+
+            const grandTotal = roomTotal + DEPOSIT_FEE;
+
+            elemNights.textContent = `${nights} คืน`;
+            elemCheckOut.textContent = selectedCheckOutDate;
+            elemRoomPrice.textContent = `฿${roomTotal.toLocaleString()}`;
+            elemTotal.textContent = `฿${grandTotal.toLocaleString()}`;
+
+            btnSubmit.disabled = false;
+            btnSubmit.className = 'w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-ocean-700 to-ocean-500 hover:from-ocean-800 hover:to-ocean-600 text-white font-bold text-sm shadow-lg shadow-ocean-700/30 transition-all transform hover:-translate-y-0.5 cursor-pointer';
+            btnSubmit.innerHTML = `<i class="fa-solid fa-paper-plane mr-2"></i> ทำการจองบ้านพัก (฿${grandTotal.toLocaleString()})`;
+
+            return grandTotal;
+        }
+
+        function getNightsCount(startStr, endStr) {
+            const start = parseDateStr(startStr);
+            const end = parseDateStr(endStr);
+            const diffTime = Math.abs(end - start);
+            return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        }
+
+        function handleFormSubmit(e) {
+            e.preventDefault();
+
+            if (!selectedCheckInDate || !selectedCheckOutDate) {
+                showToast('กรุณาเลือกวันเข้าพักให้ครบถ้วน', 'error');
+                return;
+            }
+
+            const name = document.getElementById('cust-name').value.trim();
+            const phone = document.getElementById('cust-phone').value.trim();
+            const guests = document.getElementById('cust-guests').value;
+            const notes = document.getElementById('cust-notes').value.trim();
+
+            const nights = getNightsCount(selectedCheckInDate, selectedCheckOutDate);
+
+            let curr = parseDateStr(selectedCheckInDate);
+            const end = parseDateStr(selectedCheckOutDate);
+            let roomTotal = 0;
+            while (curr < end) {
+                const dayOfWeek = curr.getDay();
+                roomTotal += (dayOfWeek === 0 || dayOfWeek === 5 || dayOfWeek === 6) ? WEEKEND_RATE : WEEKDAY_RATE;
+                curr.setDate(curr.getDate() + 1);
+            }
+            const grandTotal = roomTotal + DEPOSIT_FEE;
+
+            pendingBookingData = {
+                name,
+                phone,
+                checkIn: selectedCheckInDate,
+                checkOut: selectedCheckOutDate,
+                nights,
+                guests,
+                notes,
+                totalPrice: grandTotal,
+                status: 'booking',
+                createdAt: new Date().toISOString()
+            };
+
+            document.getElementById('conf-name').textContent = name;
+            document.getElementById('conf-phone').textContent = phone;
+            document.getElementById('conf-checkin').textContent = selectedCheckInDate;
+            document.getElementById('conf-checkout').textContent = selectedCheckOutDate;
+            document.getElementById('conf-nights').textContent = `${nights} คืน`;
+            document.getElementById('conf-guests').textContent = guests;
+            document.getElementById('conf-total').textContent = `฿${grandTotal.toLocaleString()} บาท`;
+
+            document.getElementById('confirm-modal').classList.remove('hidden');
+        }
+
+        function closeConfirmModal() {
+            document.getElementById('confirm-modal').classList.add('hidden');
+        }
+
+        async function proceedBooking() {
+            if (!pendingBookingData) return;
+
+            const btnConfirm = document.getElementById('btn-proceed-confirm');
+            const originalBtnHtml = btnConfirm.innerHTML;
+            btnConfirm.disabled = true;
+            btnConfirm.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> กำลังตรวจสอบวันว่าง...';
+
+            let bookingResult;
+            try {
+                if (!GOOGLE_SHEET_WEBAPP_URL || GOOGLE_SHEET_WEBAPP_URL.includes("YOUR_GOOGLE_APPS_SCRIPT")) {
+                    throw new Error('Google Sheets endpoint is not configured');
+                }
+
+                const result = await submitBookingToSheets(pendingBookingData);
+                if (result && result.status === 'conflict') {
+                    selectedCheckInDate = null;
+                    selectedCheckOutDate = null;
+                    pendingBookingData = null;
+                    syncInputsWithSelection();
+                    calculateTotalPrice();
+                    closeConfirmModal();
+                    await loadBookingsFromSheets();
+                    showToast('ขออภัย ช่วงวันที่เลือกมีผู้จองแล้ว กรุณาเลือกวันใหม่', 'error');
+                    btnConfirm.disabled = false;
+                    btnConfirm.innerHTML = originalBtnHtml;
+                    return;
+                }
+
+                if (!result || result.status !== 'success' || !result.data || !result.data.id) {
+                    throw new Error(result && result.message ? result.message : 'Booking was not saved');
+                }
+                bookingResult = result;
+            } catch (err) {
+                console.error('ไม่สามารถตรวจสอบหรือบันทึกการจองใน Google Sheets ได้:', err);
+                btnConfirm.disabled = false;
+                btnConfirm.innerHTML = originalBtnHtml;
+                showToast('ตรวจสอบหรือบันทึกการจองไม่สำเร็จ กรุณาลองอีกครั้ง', 'error');
+                return;
+            }
+
+            pendingBookingData.id = bookingResult.data.id;
+            bookings.push({
+                checkIn: pendingBookingData.checkIn,
+                checkOut: pendingBookingData.checkOut,
+                status: bookingResult.data.status || 'booking'
+            });
+            saveBookings();
+
+            btnConfirm.disabled = false;
+            btnConfirm.innerHTML = originalBtnHtml;
+
+            closeConfirmModal();
+
+            document.getElementById('rec-ref').textContent = pendingBookingData.id;
+            document.getElementById('rec-name').textContent = pendingBookingData.name;
+            document.getElementById('rec-phone').textContent = pendingBookingData.phone;
+            document.getElementById('rec-checkin').textContent = pendingBookingData.checkIn;
+            document.getElementById('rec-checkout').textContent = pendingBookingData.checkOut;
+            document.getElementById('rec-guests').textContent = pendingBookingData.guests;
+            document.getElementById('rec-deposit').textContent = `฿${pendingBookingData.totalPrice.toLocaleString()} บาท`;
+
+            document.getElementById('receipt-modal').classList.remove('hidden');
+
+            document.getElementById('booking-form').reset();
+            selectedCheckInDate = null;
+            selectedCheckOutDate = null;
+            pendingBookingData = null;
+            renderCalendar();
+            calculateTotalPrice();
+
+            showToast('จองสำเร็จ แอดมินจะติดต่อกลับ', 'success');
+        }
+
+        function closeReceiptModal() {
+            document.getElementById('receipt-modal').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
