@@ -1,4 +1,4 @@
-const ADMIN_PASSWORD_HASH_ITERATIONS = 12000;
+const ADMIN_PASSWORD_HASH_ITERATIONS = 4000;
 
 function doGet(e) {
   const callback = e && e.parameter ? e.parameter.callback : '';
