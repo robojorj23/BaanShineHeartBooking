@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>บ้านชายหาด - ที่พักติดทะเล แหลมเจริญ หาดแสงจันทร์ ระยอง</title>
+    <link rel="icon" type="image/jpeg" href="image/logo.jpg">
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Google Fonts: Prompt & Playfair Display -->
@@ -51,7 +52,7 @@
         }
         .hero-bg {
             background: linear-gradient(to bottom, rgba(11, 25, 44, 0.45), rgba(11, 25, 44, 0.75)), 
-                        url('https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=2000&q=80') center/cover no-repeat;
+                        url('image/background.jpg') center/cover no-repeat;
         }
         .glass-card {
             background: rgba(255, 255, 255, 0.92);
@@ -94,9 +95,7 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between h-20">
                 <a href="#" class="flex items-center gap-3 group">
-                    <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-ocean-700 to-ocean-500 text-white flex items-center justify-center shadow-lg shadow-ocean-500/30 group-hover:scale-105 transition-transform">
-                        <i class="fa-solid font-bold fa-house-water text-xl"></i>
-                    </div>
+                    <img src="image/logo.jpg" alt="โลโก้บ้านชายหาด" class="w-11 h-11 rounded-full object-cover shadow-md group-hover:scale-105 transition-transform">
                     <div>
                         <span class="font-serif font-bold text-2xl tracking-tight text-slate-900 block leading-none">บ้านชายหาด</span>
                         <span class="text-xs font-medium text-ocean-700 tracking-widest uppercase">แหลมเจริญ หาดแสงจันทร์ ระยอง</span>
@@ -127,14 +126,17 @@
                 <div class="md:col-span-8 space-y-6">
                     <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-xs font-medium tracking-wide">
                         <i class="fa-solid fa-location-dot text-amber-400"></i>
-                        <span>แหลมเจริญ - หาดแสงจันทร์ จ.ระยอง (รองรับ 6 - 14 ท่าน)</span>
+                        <span>แหลมเจริญ - หาดแสงจันทร์ จ.ระยอง (เหมาทั้งหลัง รองรับ 6 - 14 ท่าน)</span>
                     </div>
                     <h1 class="font-serif text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight tracking-tight">
-                        บ้านชายหาด พูลวิลล่า <br class="hidden sm:inline"/>
-                        <span class="text-transparent bg-clip-text bg-gradient-to-r from-teal-200 via-sand-200 to-amber-200">ที่พักติดทะเล แหลมเจริญ หาดแสงจันทร์</span>
+                        บ้านชายหาด <span class="text-transparent bg-clip-text bg-gradient-to-r from-teal-200 via-sand-200 to-amber-200">ที่พักติดทะเล แหลมเจริญ หาดแสงจันทร์ ระยอง</span>
                     </h1>
                     <p class="text-slate-200 text-base sm:text-lg max-w-2xl font-light leading-relaxed">
                         พักผ่อนสุดชิลล์ริมทะเลระยอง บ้านพักติดหาดส่วนตัว สระว่ายน้ำ บรรยากาศเงียบสงบ ราคาเดิมไม่มีบวกเพิ่มช่วงเทศกาลหรือวันหยุดพิเศษ
+                    </p>
+                    <p class="text-sm text-white/90">
+                        <i class="fa-solid fa-phone mr-1.5"></i> ติดต่อเจ้าของบ้าน:
+                        <a href="tel:0805650481" class="font-semibold underline underline-offset-2 hover:text-teal-200">พี่จอร์จ 080-565-0481</a>
                     </p>
                     <div class="flex flex-wrap gap-4 pt-2 justify-center md:justify-start">
                         <a href="#booking-section" class="px-7 py-3.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-semibold text-sm shadow-xl shadow-amber-500/25 transition-all transform hover:-translate-y-0.5 flex items-center gap-2">
@@ -151,7 +153,7 @@
                         <div class="flex justify-between items-start">
                             <div>
                                 <span class="text-xs uppercase tracking-wider text-slate-500 font-semibold">ราคาเริ่มต้น</span>
-                                <div class="text-3xl font-extrabold text-ocean-800">฿6,900 <span class="text-xs font-normal text-slate-500">/ คืน</span></div>
+                                <div class="text-3xl font-extrabold text-ocean-800">฿6,900 - 8,900 <span class="text-xs font-normal text-slate-500">/ คืน</span></div>
                             </div>
                             <span class="px-2.5 py-1 bg-teal-100 text-teal-800 text-xs font-bold rounded-lg">บ้านพัก 1 หลัง</span>
                         </div>
@@ -278,7 +280,7 @@
                             <i class="fa-solid fa-circle-info text-amber-600"></i> เงื่อนไขเวลาเข้าพัก
                         </div>
                         <p class="text-amber-800/90 leading-relaxed">
-                            เช็คอิน (Check-in) เวลา 14:00 น. เป็นต้นไป | เช็คเอาท์ (Check-out) ไม่เกิน 11:30 น. ของวันถัดไป
+                            เช็คอิน (Check-in) เวลา 14:00 น. เป็นต้นไป | เช็คเอาท์ (Check-out) ไม่เกิน 11:00 น. ของวันถัดไป
                         </p>
                     </div>
                 </div>
@@ -313,9 +315,15 @@
                                 <select id="cust-guests" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-ocean-500 focus:outline-none">
                                     <option value="6-8 ท่าน">6 - 8 ท่าน</option>
                                     <option value="9-11 ท่าน">9 - 11 ท่าน</option>
-                                    <option value="12-14 ท่าน" selected>12 - 14 ท่าน (ตามมาตรฐานบ้านพัก)</option>
+                                    <option value="12-14 ท่าน" selected>12 - 14 ท่าน </option>
+                                    <option value="15-20 ท่าน" >เกิน 14 ท่าน เสริมคนละ 400</option>
                                 </select>
                             </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">อีเมล <span class="text-rose-500">*</span></label>
+                            <input type="email" id="cust-email" required maxlength="254" autocomplete="email" placeholder="name@example.com" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-ocean-500 focus:outline-none">
                         </div>
 
                         <div>
@@ -335,14 +343,6 @@
                             <div class="flex justify-between text-xs text-slate-600">
                                 <span>ค่าห้องพักรวม:</span>
                                 <span id="summary-room-price" class="font-semibold text-slate-900">฿0</span>
-                            </div>
-                            <div class="flex justify-between text-xs text-slate-600">
-                                <span>ค่าประกันความเสียหาย:</span>
-                                <span class="font-bold text-emerald-600">฿0 (ไม่มีค่าประกัน)</span>
-                            </div>
-                            <div class="flex justify-between text-xs text-slate-600">
-                                <span>เงินมัดจำล่วงหน้า:</span>
-                                <span class="font-bold text-emerald-600">฿0 (จ่ายวันเข้าพัก)</span>
                             </div>
                             <hr class="border-slate-200">
                             <div class="flex justify-between items-center text-sm font-bold text-slate-900 pt-1">
@@ -367,21 +367,57 @@
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     <div class="rounded-2xl overflow-hidden shadow-md group relative">
-                        <img src="https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=800&q=80" alt="Private Pool" class="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-500">
+                        <img src="image/1.jpg" alt="ห้องนั่งเล่นพร้อมโซฟา" class="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-500">
                         <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4 text-white font-medium text-sm">
-                            สระว่ายน้ำส่วนตัววิวทะเล 180 องศา
+                            ห้องนั่งเล่น
                         </div>
                     </div>
                     <div class="rounded-2xl overflow-hidden shadow-md group relative">
-                        <img src="https://images.unsplash.com/photo-1613977257363-707ba9348227?auto=format&fit=crop&w=800&q=80" alt="Living Area" class="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-500">
+                        <img src="image/2.jpg" alt="มุมโทรทัศน์ภายในบ้านพัก" class="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-500">
                         <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4 text-white font-medium text-sm">
-                            ห้องนั่งเล่นโอ่อ่าสไตล์โมเดิร์นทรอปิคอล
+                            มุมพักผ่อนและโทรทัศน์
                         </div>
                     </div>
                     <div class="rounded-2xl overflow-hidden shadow-md group relative">
-                        <img src="https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=800&q=80" alt="Master Bedroom" class="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-500">
+                        <img src="image/3.jpg" alt="โต๊ะรับประทานอาหาร" class="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-500">
                         <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4 text-white font-medium text-sm">
-                            ห้องนอนมาสเตอร์พร้อมวิวทะเลยามเช้า
+                            พื้นที่รับประทานอาหาร
+                        </div>
+                    </div>
+                    <div class="rounded-2xl overflow-hidden shadow-md group relative">
+                        <img src="image/4.jpg" alt="มุมนั่งพักริมระเบียง" class="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-500">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4 text-white font-medium text-sm">
+                            พักผ่อนชมวิวทะเล
+                        </div>
+                    </div>
+                    <div class="rounded-2xl overflow-hidden shadow-md group relative">
+                        <img src="image/5.jpg" alt="ห้องนอนพร้อมเตียงคู่และวิวทะเล" class="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-500">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4 text-white font-medium text-sm">
+                            ห้องนอนวิวทะเล
+                        </div>
+                    </div>
+                    <div class="rounded-2xl overflow-hidden shadow-md group relative">
+                        <img src="image/6.jpg" alt="ระเบียงบ้านพักมองเห็นทะเล" class="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-500">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4 text-white font-medium text-sm">
+                            ระเบียงชมทะเล
+                        </div>
+                    </div>
+                    <div class="rounded-2xl overflow-hidden shadow-md group relative">
+                        <img src="image/7.jpg" alt="วิวทะเลจากพื้นที่พักผ่อน" class="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-500">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4 text-white font-medium text-sm">
+                            วิวทะเลจากบ้านพัก
+                        </div>
+                    </div>
+                    <div class="rounded-2xl overflow-hidden shadow-md group relative">
+                        <img src="image/8.jpg" alt="ชายหาดและทะเลบริเวณที่พัก" class="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-500">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4 text-white font-medium text-sm">
+                            ชายหาดและทะเล
+                        </div>
+                    </div>
+                    <div class="rounded-2xl overflow-hidden shadow-md group relative">
+                        <img src="image/9.jpg" alt="พื้นที่นั่งเล่นด้านนอกพร้อมเตาปิ้งย่าง" class="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-500">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4 text-white font-medium text-sm">
+                            พื้นที่พักผ่อนด้านนอก
                         </div>
                     </div>
                 </div>
@@ -392,17 +428,20 @@
     <footer class="bg-slate-900 text-slate-400 py-12 border-t border-slate-800 text-xs">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-4">
             <div class="flex items-center justify-center gap-2 text-white font-serif font-bold text-lg">
-                <i class="fa-solid fa-house-water text-ocean-500"></i> บ้านชายหาด ที่พักติดทะเล แหลมเจริญ หาดแสงจันทร์ ระยอง
+                <img src="image/logo.jpg" alt="" class="h-10 w-10 rounded-full object-cover"> บ้านชายหาด ที่พักติดทะเล แหลมเจริญ หาดแสงจันทร์ ระยอง
             </div>
             <p class="max-w-md mx-auto text-slate-400">
                 แหลมเจริญ หาดแสงจันทร์ อ.เมือง จ.ระยอง
+            </p>
+            <p class="text-slate-300">
+                ติดต่อเจ้าของบ้าน: <a href="tel:0805650481" class="font-semibold text-white underline underline-offset-2 hover:text-teal-200">พี่จอร์จ 080-565-0481</a>
             </p>
             <div>
                 <a href="https://www.facebook.com/BaanShineHeartRayong" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold transition-all">
                     <i class="fa-brands fa-facebook"></i> ติดตามหรือสอบถามทาง Facebook Page
                 </a>
             </div>
-            <p><a href="admin.html" class="text-slate-400 underline underline-offset-2 hover:text-white">เข้าสู่ระบบผู้ดูแล</a></p>
+            <p><a href="manage.html" class="text-slate-400 underline underline-offset-2 hover:text-white">เข้าสู่ระบบผู้ดูแล</a></p>
             <p class="text-slate-600">© 2026 บ้านชายหาด ระยอง. All Rights Reserved.</p>
         </div>
     </footer>
@@ -420,6 +459,7 @@
             <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 text-xs space-y-2.5">
                 <div class="flex justify-between"><span class="text-slate-500">ชื่อผู้จอง:</span><span id="conf-name" class="font-bold text-slate-800"></span></div>
                 <div class="flex justify-between"><span class="text-slate-500">เบอร์โทรศัพท์:</span><span id="conf-phone" class="font-bold text-slate-800"></span></div>
+                <div class="flex justify-between"><span class="text-slate-500">อีเมล:</span><span id="conf-email" class="font-bold text-slate-800"></span></div>
                 <div class="flex justify-between"><span class="text-slate-500">วันเช็คอิน:</span><span id="conf-checkin" class="font-bold text-slate-800"></span></div>
                 <div class="flex justify-between"><span class="text-slate-500">วันเช็คเอาท์:</span><span id="conf-checkout" class="font-bold text-slate-800"></span></div>
                 <div class="flex justify-between"><span class="text-slate-500">จำนวนคืน:</span><span id="conf-nights" class="font-bold text-slate-800"></span></div>
@@ -449,19 +489,19 @@
                     <i class="fa-solid fa-circle-check"></i>
                 </div>
                 <h3 class="text-2xl font-bold text-emerald-600">จองสำเร็จ</h3>
-                <p class="text-sm font-semibold text-slate-700">แอดมินจะติดต่อกลับเพื่อยืนยันรายละเอียดอีกครั้ง</p>
+                <p class="text-sm font-semibold text-slate-700">รายละเอียดการจองถูกส่งไปยังอีเมลของท่านแล้ว</p>
                 <p class="text-xs text-slate-500 pt-1">รหัสอ้างอิงการจอง: <strong id="rec-ref" class="text-ocean-700 font-mono">B-001</strong></p>
             </div>
 
             <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 text-xs space-y-2.5">
                 <div class="flex justify-between"><span class="text-slate-500">ชื่อผู้จอง:</span><span id="rec-name" class="font-bold text-slate-800"></span></div>
                 <div class="flex justify-between"><span class="text-slate-500">เบอร์โทรศัพท์:</span><span id="rec-phone" class="font-bold text-slate-800"></span></div>
+                <div class="flex justify-between"><span class="text-slate-500">อีเมล:</span><span id="rec-email" class="font-bold text-slate-800"></span></div>
                 <div class="flex justify-between"><span class="text-slate-500">วันเช็คอิน:</span><span id="rec-checkin" class="font-bold text-slate-800"></span></div>
                 <div class="flex justify-between"><span class="text-slate-500">วันเช็คเอาท์:</span><span id="rec-checkout" class="font-bold text-slate-800"></span></div>
                 <div class="flex justify-between"><span class="text-slate-500">จำนวนผู้เข้าพัก:</span><span id="rec-guests" class="font-bold text-slate-800"></span></div>
-                <div class="flex justify-between"><span class="text-slate-500">ค่าประกันความเสียหาย:</span><span class="font-bold text-emerald-600">฿0 (ไม่มี)</span></div>
                 <hr class="border-slate-200">
-                <div class="flex justify-between text-sm font-bold text-slate-900"><span>ยอดชำระวันเข้าพัก:</span><span id="rec-deposit" class="text-ocean-700 font-extrabold"></span></div>
+                <div class="flex justify-between text-sm font-bold text-slate-900"><span>ยอดชำระวันเข้าพัก:</span><span id="rec-total" class="text-ocean-700 font-extrabold"></span></div>
             </div>
 
             <div class="text-center space-y-3">
@@ -488,8 +528,6 @@
 
         const WEEKDAY_RATE = 6900;
         const WEEKEND_RATE = 8900;
-        const DEPOSIT_FEE = 0;
-
         const LOCAL_STORAGE_KEY = 'baanshaihad_bookings_cache';
 
         function initInitialData() {
@@ -903,7 +941,24 @@
         }
 
         function handleDateClick(dateStr) {
-            if (!selectedCheckInDate) {
+            if (selectedCheckInDate && selectedCheckOutDate &&
+                dateStr >= selectedCheckInDate && dateStr < selectedCheckOutDate) {
+                const isFirstNight = dateStr === selectedCheckInDate;
+                const isLastNight = getNextDateStr(dateStr) === selectedCheckOutDate;
+                if (isFirstNight && isLastNight) {
+                    selectedCheckInDate = null;
+                    selectedCheckOutDate = null;
+                    showToast('ยกเลิกวันที่เลือกแล้ว', 'info');
+                } else if (isFirstNight) {
+                    selectedCheckInDate = getNextDateStr(dateStr);
+                    showToast('ยกเลิกคืนแรกแล้ว', 'info');
+                } else if (isLastNight) {
+                    selectedCheckOutDate = dateStr;
+                    showToast('ยกเลิกคืนสุดท้ายแล้ว', 'info');
+                } else {
+                    showToast('ยกเลิกคืนกลางช่วงไม่ได้ กรุณาเลือกคืนแรกหรือคืนสุดท้าย', 'error');
+                }
+            } else if (!selectedCheckInDate) {
                 selectedCheckInDate = dateStr;
                 selectedCheckOutDate = getNextDateStr(dateStr);
                 showToast(`เลือกวันเข้าพักคืนแรก: ${dateStr}`, 'info');
@@ -980,7 +1035,7 @@
                 curr.setDate(curr.getDate() + 1);
             }
 
-            const grandTotal = roomTotal + DEPOSIT_FEE;
+            const grandTotal = roomTotal;
 
             elemNights.textContent = `${nights} คืน`;
             elemCheckOut.textContent = selectedCheckOutDate;
@@ -1011,6 +1066,14 @@
 
             const name = document.getElementById('cust-name').value.trim();
             const phone = document.getElementById('cust-phone').value.trim();
+            const emailInput = document.getElementById('cust-email');
+            const email = emailInput.value.trim();
+            emailInput.setCustomValidity('');
+            if (!emailInput.checkValidity() || !isValidEmailAddress(email)) {
+                emailInput.setCustomValidity('กรุณากรอกอีเมลให้ถูกต้อง');
+                emailInput.reportValidity();
+                return;
+            }
             const guests = document.getElementById('cust-guests').value;
             const notes = document.getElementById('cust-notes').value.trim();
 
@@ -1024,11 +1087,12 @@
                 roomTotal += (dayOfWeek === 0 || dayOfWeek === 5 || dayOfWeek === 6) ? WEEKEND_RATE : WEEKDAY_RATE;
                 curr.setDate(curr.getDate() + 1);
             }
-            const grandTotal = roomTotal + DEPOSIT_FEE;
+            const grandTotal = roomTotal;
 
             pendingBookingData = {
                 name,
                 phone,
+                email,
                 checkIn: selectedCheckInDate,
                 checkOut: selectedCheckOutDate,
                 nights,
@@ -1041,6 +1105,7 @@
 
             document.getElementById('conf-name').textContent = name;
             document.getElementById('conf-phone').textContent = phone;
+            document.getElementById('conf-email').textContent = email;
             document.getElementById('conf-checkin').textContent = selectedCheckInDate;
             document.getElementById('conf-checkout').textContent = selectedCheckOutDate;
             document.getElementById('conf-nights').textContent = `${nights} คืน`;
@@ -1052,6 +1117,22 @@
 
         function closeConfirmModal() {
             document.getElementById('confirm-modal').classList.add('hidden');
+        }
+
+        function isValidEmailAddress(value) {
+            const email = String(value || '').trim();
+            const parts = email.split('@');
+            return email.length <= 254 &&
+                parts.length === 2 &&
+                parts[0].length > 0 &&
+                parts[0].length <= 64 &&
+                parts[0].charAt(0) !== '.' &&
+                parts[0].charAt(parts[0].length - 1) !== '.' &&
+                !parts[0].includes('..') &&
+                /^[A-Z0-9.!#$%&'*+/=?^_`{|}~-]+$/i.test(parts[0]) &&
+                parts[1].split('.').length >= 2 &&
+                parts[1].split('.').every(label => label.length > 0 && label.length <= 63 && /^[A-Z0-9](?:[A-Z0-9-]*[A-Z0-9])?$/i.test(label)) &&
+                parts[1].split('.').slice(-1)[0].length >= 2;
         }
 
         async function proceedBooking() {
@@ -1111,10 +1192,11 @@
             document.getElementById('rec-ref').textContent = pendingBookingData.id;
             document.getElementById('rec-name').textContent = pendingBookingData.name;
             document.getElementById('rec-phone').textContent = pendingBookingData.phone;
+            document.getElementById('rec-email').textContent = pendingBookingData.email;
             document.getElementById('rec-checkin').textContent = pendingBookingData.checkIn;
             document.getElementById('rec-checkout').textContent = pendingBookingData.checkOut;
             document.getElementById('rec-guests').textContent = pendingBookingData.guests;
-            document.getElementById('rec-deposit').textContent = `฿${pendingBookingData.totalPrice.toLocaleString()} บาท`;
+            document.getElementById('rec-total').textContent = `฿${pendingBookingData.totalPrice.toLocaleString()} บาท`;
 
             document.getElementById('receipt-modal').classList.remove('hidden');
 

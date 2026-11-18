@@ -19,7 +19,7 @@ function doPost(e) {
     const payload = parseBookingPayload_(parameters.payload, e && e.postData ? e.postData.contents : '');
     result = parameters.action === 'admin'
       ? handleAdminRequest_(payload)
-      : reserveBooking_(payload);
+      : reserveBooking_(payload, 'website');
   } catch (err) {
     console.error(err && err.stack ? err.stack : err);
     result = {
@@ -54,8 +54,14 @@ function handleAdminRequest_(request) {
   if (request.action === 'list') {
     return { status: 'success', data: getAdminBookings_() };
   }
+  if (request.action === 'createBooking') {
+    return createAdminBooking_(request.booking, session);
+  }
   if (request.action === 'update') {
     return updateAdminBooking_(request.booking);
+  }
+  if (request.action === 'sendConfirmationEmail') {
+    return resendBookingConfirmationEmail_(request.id);
   }
   if (request.action === 'listUsers') {
     requireSuperAdmin_(session);
@@ -488,16 +494,18 @@ function getAdminBookings_() {
 
 function updateAdminBooking_(booking) {
   const lock = LockService.getScriptLock();
+  let updatedBooking;
+  let shouldSendConfirmation = false;
   lock.waitLock(30000);
   try {
     if (!booking || typeof booking !== 'object') {
       return { status: 'error', message: 'ข้อมูลการจองไม่ถูกต้อง' };
     }
 
-    const sheetInfo = getBookingSheet_();
     const bookingId = String(booking.id || '').trim();
     const name = String(booking.name || '').trim();
     const phone = String(booking.phone || '').trim();
+    const email = String(booking.email || '').trim();
     const checkIn = String(booking.checkIn || '').trim();
     const checkOut = String(booking.checkOut || '').trim();
     const people = String(booking.people || '').trim();
@@ -516,7 +524,14 @@ function updateAdminBooking_(booking) {
     if (!Number.isFinite(totalPrice) || totalPrice < 0 || comment.length > 5000) {
       return { status: 'error', message: 'กรุณาตรวจสอบยอดเงินหรือข้อความเพิ่มเติม' };
     }
+    if (email && !isValidEmail_(email)) {
+      return { status: 'error', message: 'รูปแบบอีเมลไม่ถูกต้อง' };
+    }
+    if (status === 'confirmed' && !isValidEmail_(email)) {
+      return { status: 'error', message: 'กรุณากรอกอีเมลที่ถูกต้องก่อนยืนยันการจอง' };
+    }
 
+    const sheetInfo = ensureBookingMetadataColumns_(getBookingSheet_());
     const rows = sheetInfo.sheet.getDataRange().getValues();
     let targetRowIndex = -1;
     for (let rowIndex = 1; rowIndex < rows.length; rowIndex++) {
@@ -526,6 +541,8 @@ function updateAdminBooking_(booking) {
       }
     }
     if (targetRowIndex < 0) return { status: 'error', message: 'ไม่พบรายการจองนี้ อาจถูกลบไปแล้ว' };
+    shouldSendConfirmation = status === 'confirmed' &&
+      getRowStatus_(rows[targetRowIndex], sheetInfo.columns.statuses).toLowerCase() !== 'confirmed';
 
     if (!isCancelledStatus_(status)) {
       for (let rowIndex = 1; rowIndex < rows.length; rowIndex++) {
@@ -555,16 +572,112 @@ function updateAdminBooking_(booking) {
     updatedRow[sheetInfo.columns.people] = people;
     updatedRow[sheetInfo.columns.comment] = comment;
     updatedRow[sheetInfo.columns.totalPrice] = totalPrice;
+    updatedRow[sheetInfo.columns.email] = email;
     sheetInfo.columns.statuses.forEach(function(columnIndex) {
       updatedRow[columnIndex] = status;
     });
 
     sheetInfo.sheet.getRange(targetRowIndex + 1, 1, 1, updatedRow.length).setValues([updatedRow]);
     SpreadsheetApp.flush();
-    return { status: 'success', data: bookingRecordFromRow_(updatedRow, sheetInfo) };
+    updatedBooking = bookingRecordFromRow_(updatedRow, sheetInfo);
   } finally {
     lock.releaseLock();
   }
+
+  const result = { status: 'success', data: updatedBooking };
+  if (shouldSendConfirmation) {
+    try {
+      sendBookingConfirmationEmail_(updatedBooking);
+      result.emailStatus = 'sent';
+    } catch (error) {
+      console.error('ไม่สามารถส่งอีเมลยืนยันการจองได้:', error && error.stack ? error.stack : error);
+      result.emailStatus = 'failed';
+      const detail = error && error.message ? String(error.message).slice(0, 300) : 'ไม่ทราบสาเหตุ';
+      result.emailMessage = 'บันทึกการยืนยันแล้ว แต่ส่งอีเมลไม่สำเร็จ: ' + detail;
+    }
+  }
+  return result;
+}
+
+function resendBookingConfirmationEmail_(bookingId) {
+  const lock = LockService.getScriptLock();
+  let booking;
+  lock.waitLock(30000);
+  try {
+    const sheetInfo = getBookingSheet_();
+    const rows = sheetInfo.sheet.getDataRange().getValues();
+    for (let rowIndex = 1; rowIndex < rows.length; rowIndex++) {
+      if (String(rows[rowIndex][sheetInfo.columns.id] || '').trim() !== String(bookingId || '').trim()) continue;
+      booking = bookingRecordFromRow_(rows[rowIndex], sheetInfo);
+      break;
+    }
+    if (!booking) return { status: 'error', message: 'ไม่พบรายการจองนี้' };
+    if (String(booking.status || '').trim().toLowerCase() !== 'confirmed') {
+      return { status: 'error', message: 'ส่งอีเมลได้เฉพาะรายการที่ยืนยันแล้ว' };
+    }
+  } finally {
+    lock.releaseLock();
+  }
+
+  sendBookingConfirmationEmail_(booking);
+  return { status: 'success', data: { email: booking.email } };
+}
+
+function sendBookingConfirmationEmail_(booking) {
+  if (!booking || !isValidEmail_(booking.email)) {
+    throw new Error('ไม่มีอีเมลลูกค้าที่ถูกต้องสำหรับรายการจองนี้');
+  }
+
+  const escapeHtml = function(value) {
+    return String(value == null || value === '' ? 'ไม่มี' : value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  };
+  const details = [
+    ['รหัสจอง', booking.id],
+    ['ชื่อผู้จอง', booking.name],
+    ['อีเมล', booking.email],
+    ['เบอร์โทรศัพท์', booking.phone],
+    ['วันเข้าพัก', booking.checkIn],
+    ['วันเช็คเอาท์', booking.checkOut],
+    ['จำนวนคืน', String(booking.nights) + ' คืน'],
+    ['จำนวนผู้เข้าพัก', booking.people],
+    ['ยอดชำระวันเข้าพัก', '฿' + (Number(booking.totalPrice) || 0).toLocaleString('th-TH') + ' บาท'],
+    ['คำขอเพิ่มเติม', booking.comment || 'ไม่มี'],
+    ['สถานะ', 'ยืนยันแล้ว']
+  ];
+  const textDetails = details.map(function(detail) {
+    return detail[0] + ': ' + (detail[1] || 'ไม่มี');
+  }).join('\n');
+  const htmlRows = details.map(function(detail) {
+    return '<tr><th style="padding:8px;text-align:left;border-bottom:1px solid #e2e8f0">' +
+      escapeHtml(detail[0]) + '</th><td style="padding:8px;border-bottom:1px solid #e2e8f0">' +
+      escapeHtml(detail[1]) + '</td></tr>';
+  }).join('');
+  const subject = 'ยืนยันการจองบ้านชายหาด ' + booking.id;
+  const body = 'เรียน คุณ' + (booking.name || '') + '\n\n' +
+    'ยืนยันการจองบ้านชายหาดเรียบร้อยแล้ว รายละเอียดการจอง:\n' + textDetails +
+    '\n\nติดต่อเจ้าของบ้าน: พี่จอร์จ 080-565-0481';
+  const htmlBody = '<div style="font-family:Arial,sans-serif;color:#1e293b;line-height:1.6">' +
+    '<p>เรียน คุณ' + escapeHtml(booking.name) + '</p>' +
+    '<p>ยืนยันการจองบ้านชายหาดเรียบร้อยแล้ว รายละเอียดการจอง:</p>' +
+    '<table style="border-collapse:collapse;width:100%;max-width:640px">' + htmlRows + '</table>' +
+    '<p>ติดต่อเจ้าของบ้าน: พี่จอร์จ 080-565-0481</p></div>';
+
+  MailApp.sendEmail({
+    to: booking.email,
+    subject: subject,
+    body: body,
+    htmlBody: htmlBody,
+    name: 'บ้านชายหาด'
+  });
+}
+
+function authorizeBookingEmailSending() {
+  return MailApp.getRemainingDailyQuota();
 }
 
 function bookingRecordFromRow_(row, sheetInfo) {
@@ -576,6 +689,8 @@ function bookingRecordFromRow_(row, sheetInfo) {
     checkOut: dateCellToIso_(row[sheetInfo.columns.checkOut]),
     nights: Number(row[sheetInfo.columns.nights]) || 0,
     people: String(row[sheetInfo.columns.people] || ''),
+    email: sheetInfo.columns.email >= 0 ? String(row[sheetInfo.columns.email] || '') : '',
+    bookBy: sheetInfo.columns.bookBy >= 0 ? String(row[sheetInfo.columns.bookBy] || '') : '',
     status: getRowStatus_(row, sheetInfo.columns.statuses),
     comment: String(row[sheetInfo.columns.comment] || ''),
     totalPrice: Number(row[sheetInfo.columns.totalPrice]) || 0,
@@ -612,11 +727,18 @@ function getAvailability_() {
   return records;
 }
 
-function reserveBooking_(booking) {
+function createAdminBooking_(booking, session) {
+  return reserveBooking_(booking, session.username, true);
+}
+
+function reserveBooking_(booking, bookBy, skipDuplicateRequest) {
   const lock = LockService.getScriptLock();
   lock.waitLock(30000);
   try {
-    const sheetInfo = getBookingSheet_();
+    if (!booking || typeof booking !== 'object') {
+      return { status: 'error', message: 'ข้อมูลการจองไม่ถูกต้อง' };
+    }
+
     const checkIn = String(booking.checkIn || '').trim();
     const checkOut = String(booking.checkOut || '').trim();
     if (!isValidIsoDate_(checkIn) || !isValidIsoDate_(checkOut) || checkOut <= checkIn) {
@@ -625,10 +747,15 @@ function reserveBooking_(booking) {
 
     const name = String(booking.name || '').trim();
     const phone = String(booking.phone || '').trim();
-    if (!name || !phone) {
-      return { status: 'error', message: 'กรุณากรอกชื่อและเบอร์โทรศัพท์' };
+    const email = String(booking.email || '').trim();
+    if (!name || !phone || !email) {
+      return { status: 'error', message: 'กรุณากรอกชื่อ เบอร์โทรศัพท์ และอีเมล' };
+    }
+    if (name.length > 200 || phone.length > 50 || !isValidEmail_(email)) {
+      return { status: 'error', message: 'กรุณาตรวจสอบชื่อ เบอร์โทรศัพท์ และรูปแบบอีเมล' };
     }
 
+    const sheetInfo = ensureBookingMetadataColumns_(getBookingSheet_());
     const rows = sheetInfo.sheet.getDataRange().getValues();
     for (let rowIndex = 1; rowIndex < rows.length; rowIndex++) {
       const row = rows[rowIndex];
@@ -637,7 +764,7 @@ function reserveBooking_(booking) {
       const existingCheckOut = dateCellToIso_(row[sheetInfo.columns.checkOut]);
       const existingName = String(row[sheetInfo.columns.name] || '').trim();
       const existingPhone = String(row[sheetInfo.columns.phone] || '').trim();
-      if (!isCancelledStatus_(existingStatus) &&
+      if (!skipDuplicateRequest && !isCancelledStatus_(existingStatus) &&
           existingCheckIn === checkIn && existingCheckOut === checkOut &&
           existingName === name && existingPhone === phone) {
         return {
@@ -660,7 +787,12 @@ function reserveBooking_(booking) {
 
     const timeZone = SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone();
     const currentYear = Number(Utilities.formatDate(new Date(), timeZone, 'yyyy'));
-    const bookingId = getNextBookingId_(rows, sheetInfo.columns.id, currentYear);
+    const bookingId = getNextBookingId_(
+      rows,
+      sheetInfo.columns.id,
+      sheetInfo.columns.createdAt,
+      currentYear
+    );
     const record = {
       id: bookingId,
       name: name,
@@ -669,6 +801,8 @@ function reserveBooking_(booking) {
       checkOut: checkOut,
       nights: Math.round((Date.parse(checkOut + 'T00:00:00Z') - Date.parse(checkIn + 'T00:00:00Z')) / 86400000),
       guests: String(booking.guests || ''),
+      email: email,
+      bookBy: String(bookBy || 'website'),
       status: 'booking',
       comment: String(booking.notes || booking.comment || ''),
       totalPrice: Number(booking.totalPrice) || 0,
@@ -688,7 +822,8 @@ function reserveBooking_(booking) {
         checkin: 'checkIn',
         checkout: 'checkOut',
         totalprice: 'totalPrice',
-        createdat: 'createdAt'
+        createdat: 'createdAt',
+        bookby: 'bookBy'
       }[normalizedHeader] || normalizedHeader;
       return Object.prototype.hasOwnProperty.call(record, recordKey) ? record[recordKey] : '';
     });
@@ -713,22 +848,29 @@ function reserveBooking_(booking) {
   }
 }
 
-function getNextBookingId_(rows, idColumn, year) {
+function getNextBookingId_(rows, idColumn, createdAtColumn, year) {
   const prefix = getYearPrefix_(year);
   const pattern = new RegExp('^' + prefix + '-(\\d+)$');
   let highestNumber = 0;
 
   for (let rowIndex = 1; rowIndex < rows.length; rowIndex++) {
     const match = pattern.exec(String(rows[rowIndex][idColumn] || '').trim());
-    if (match) highestNumber = Math.max(highestNumber, Number(match[1]));
+    if (!match) continue;
+
+    const createdAt = rows[rowIndex][createdAtColumn];
+    if (createdAt) {
+      const createdAtYear = Number(dateTimeCellToString_(createdAt).slice(0, 4));
+      if (Number.isInteger(createdAtYear) && createdAtYear !== year) continue;
+    }
+    highestNumber = Math.max(highestNumber, Number(match[1]));
   }
 
-  return prefix + '-' + String(highestNumber + 1).padStart(3, '0');
+  return prefix + '-' + String(highestNumber + 1).padStart(4, '0');
 }
 
 function getYearPrefix_(year) {
-  let sequence = year - 2024;
-  if (sequence < 1) throw new Error('ไม่สามารถสร้างรหัสจองสำหรับปีก่อน พ.ศ. 2568 ได้');
+  let sequence = year - 2025;
+  if (sequence < 1) throw new Error('ไม่สามารถสร้างรหัสจองสำหรับปีก่อน พ.ศ. 2569 ได้');
 
   let prefix = '';
   while (sequence > 0) {
@@ -776,6 +918,8 @@ function getBookingSheet_() {
         comment: commentColumn >= 0 ? commentColumn : notesColumn,
         totalPrice: normalized.indexOf('totalprice'),
         createdAt: normalized.indexOf('createdat'),
+        email: normalized.indexOf('email'),
+        bookBy: normalized.indexOf('bookby'),
         statuses: normalized.reduce(function(indices, header, index) {
           if (header === 'status') indices.push(index);
           return indices;
@@ -785,6 +929,38 @@ function getBookingSheet_() {
   }
 
   throw new Error('ไม่พบแท็บที่มีหัวคอลัมน์การจองครบถ้วน');
+}
+
+function ensureBookingMetadataColumns_(sheetInfo) {
+  const missingHeaders = [];
+  if (sheetInfo.columns.email < 0) missingHeaders.push('email');
+  if (sheetInfo.columns.bookBy < 0) missingHeaders.push('bookBy');
+  if (!missingHeaders.length) return sheetInfo;
+
+  const firstNewColumn = sheetInfo.sheet.getLastColumn() + 1;
+  sheetInfo.sheet.getRange(1, firstNewColumn, 1, missingHeaders.length).setValues([missingHeaders]);
+  missingHeaders.forEach(function(header, index) {
+    const columnIndex = firstNewColumn - 1 + index;
+    sheetInfo.headers.push(header);
+    sheetInfo.columns[header === 'email' ? 'email' : 'bookBy'] = columnIndex;
+  });
+  return sheetInfo;
+}
+
+function isValidEmail_(value) {
+  const email = String(value || '').trim();
+  if (!email || email.length > 254) return false;
+  const parts = email.split('@');
+  if (parts.length !== 2 || !parts[0] || parts[0].length > 64 || parts[0].charAt(0) === '.' ||
+      parts[0].charAt(parts[0].length - 1) === '.' || parts[0].indexOf('..') >= 0 ||
+      !/^[A-Z0-9.!#$%&'*+/=?^_`{|}~-]+$/i.test(parts[0])) {
+    return false;
+  }
+  const domainLabels = parts[1].split('.');
+  return domainLabels.length >= 2 && domainLabels.every(function(label) {
+    return label.length >= 1 && label.length <= 63 &&
+      /^[A-Z0-9](?:[A-Z0-9-]*[A-Z0-9])?$/i.test(label);
+  }) && domainLabels[domainLabels.length - 1].length >= 2;
 }
 
 function removeDuplicateStatusColumns() {
