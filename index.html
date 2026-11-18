@@ -160,7 +160,7 @@
                             <li class="flex items-center gap-2.5"><i class="fa-solid fa-check text-ocean-500"></i> วันจันทร์ - พฤหัสบดี: <strong>฿6,900 / คืน</strong></li>
                             <li class="flex items-center gap-2.5"><i class="fa-solid fa-check text-ocean-500"></i> วันศุกร์ - อาทิตย์: <strong>฿8,900 / คืน</strong></li>
                             <li class="flex items-center gap-2.5"><i class="fa-solid fa-star text-amber-500"></i> <strong>พักได้ 6 - 14 ท่าน</strong> (ราคาเดียวคุ้มค่า)</li>
-                            <li class="flex items-center gap-2.5 text-emerald-700 font-semibold"><i class="fa-solid fa-shield-heart text-emerald-600"></i> ไม่มีค่าประกันความเสียหาย!</li>
+                            <li class="flex items-center gap-2.5 text-emerald-700 font-semibold"><i class="fa-solid fa-shield-heart text-emerald-600"></i> ได้บ้านทั้งหลัง 3 ห้องนอน 4 ห้องน้ำ</li>
                             <li class="flex items-center gap-2.5 text-ocean-800 font-semibold"><i class="fa-solid fa-hand-holding-dollar text-ocean-600"></i> ไม่ต้องมัดจำ ชำระเงินวันเข้าพักได้เลย</li>
                         </ul>
                     </div>
@@ -183,10 +183,10 @@
 
                     <div class="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100">
                         <div class="w-12 h-12 rounded-xl bg-ocean-100 text-ocean-700 flex items-center justify-center text-xl shrink-0">
-                            <i class="fa-solid fa-water-ladder"></i>
+                            <i class="fa-solid fa-car"></i>
                         </div>
                         <div>
-                            <h4 class="font-bold text-slate-800 text-base">สระว่ายน้ำส่วนตัว</h4>
+                            <h4 class="font-bold text-slate-800 text-base">จอดรถหน้าบ้านได้ 2 คัน</h4>
                             <p class="text-xs text-slate-500">พร้อมพื้นที่พักผ่อนปาร์ตี้</p>
                         </div>
                     </div>
@@ -874,8 +874,8 @@
 
                 dayCell.className = baseClass;
 
-                const priceBadge = !isPast && !isBooked ? 
-                    `<span class="text-[9px] ${isWeekendRate ? 'text-amber-600 font-bold' : 'text-slate-500'}">${isWeekendRate ? '฿8.9k' : '฿6.9k'}</span>` : '';
+                const priceBadge = !isPast && !isBooked ?
+                    `<span class="whitespace-nowrap text-[8px] sm:text-[9px] ${isWeekendRate ? 'text-amber-600 font-bold' : 'text-slate-500'}">฿${(isWeekendRate ? WEEKEND_RATE : WEEKDAY_RATE).toLocaleString('th-TH')}</span>` : '';
 
                 const statusLabel = bookingStatus === 'booking'
                     ? '<span class="text-[9px] font-bold text-amber-700">รอยืนยัน</span>'

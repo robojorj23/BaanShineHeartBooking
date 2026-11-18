@@ -61,7 +61,7 @@
                 <button id="password-tab" type="button" class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">เปลี่ยนรหัสผ่าน</button>
             </nav>
             <div id="bookings-panel">
-            <div class="grid gap-4 sm:grid-cols-3 mb-6">
+            <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-6">
                 <div class="rounded-2xl bg-white border border-slate-200 p-5 shadow-sm">
                     <p class="text-sm text-slate-500">รายการจองในเดือนที่เลือก</p>
                     <p id="total-count" class="mt-1 text-3xl font-bold text-slate-900">0</p>
@@ -73,6 +73,10 @@
                 <div class="rounded-2xl bg-rose-50 border border-rose-200 p-5">
                     <p class="text-sm text-rose-800">ยืนยันแล้ว (confirmed)</p>
                     <p id="confirmed-count" class="mt-1 text-3xl font-bold text-rose-900">0</p>
+                </div>
+                <div class="rounded-2xl bg-emerald-50 border border-emerald-200 p-5">
+                    <p class="text-sm text-emerald-800">เข้าพักแล้ว (complete)</p>
+                    <p id="complete-count" class="mt-1 text-3xl font-bold text-emerald-900">0</p>
                 </div>
             </div>
 
@@ -92,9 +96,10 @@
                     <span class="inline-flex items-center gap-2"><span class="h-3 w-3 rounded bg-white border border-slate-300"></span>ว่าง</span>
                     <span class="inline-flex items-center gap-2"><span class="h-3 w-3 rounded bg-amber-100 border border-amber-300"></span>รอยืนยัน</span>
                     <span class="inline-flex items-center gap-2"><span class="h-3 w-3 rounded bg-rose-100 border border-rose-300"></span>ยืนยันแล้ว</span>
+                    <span class="inline-flex items-center gap-2"><span class="h-3 w-3 rounded bg-emerald-100 border border-emerald-300"></span>เข้าพักแล้ว</span>
                     <span class="inline-flex items-center gap-2"><span class="h-3 w-3 rounded bg-slate-100 border border-slate-300"></span>ยกเลิก</span>
-                    <span class="inline-flex items-center gap-1"><span class="font-semibold text-slate-500">฿6.9k</span> จันทร์-พฤหัสฯ / คืน</span>
-                    <span class="inline-flex items-center gap-1"><span class="font-semibold text-amber-600">฿8.9k</span> ศุกร์-อาทิตย์ / คืน</span>
+                    <span class="inline-flex items-center gap-1"><span class="font-semibold text-slate-500">฿6,900</span> จันทร์-พฤหัสฯ / คืน</span>
+                    <span class="inline-flex items-center gap-1"><span class="font-semibold text-amber-600">฿8,900</span> ศุกร์-อาทิตย์ / คืน</span>
                 </div>
                 <div class="mt-3 grid grid-cols-7 border-b border-slate-100 py-2 text-center text-xs font-semibold text-slate-500">
                     <span class="text-rose-600">อา.</span><span>จ.</span><span>อ.</span><span>พ.</span>
@@ -119,6 +124,7 @@
                             <option value="all">ทุกสถานะ</option>
                             <option value="booking">รอยืนยัน</option>
                             <option value="confirmed">ยืนยันแล้ว</option>
+                            <option value="complete">เข้าพักแล้ว</option>
                             <option value="cancel">ยกเลิก</option>
                         </select>
                     </div>
@@ -228,6 +234,7 @@
                     <select id="edit-status" required class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2">
                         <option value="booking">booking — รอยืนยัน</option>
                         <option value="confirmed">confirmed — ยืนยันแล้ว</option>
+                        <option value="complete">complete — เข้าพักแล้ว</option>
                         <option value="cancel">cancel — ยกเลิก/เปิดวันว่าง</option>
                     </select>
                 </label>
@@ -270,6 +277,7 @@
 
     <script>
         const GOOGLE_SHEET_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbwc3TfRwnd3jJRlfa3wWT-6OltZlw4zRJyDYIYCECa3HR9RCNweAYnvWw4paKvWcO-jpw/exec';
+        const ADMIN_SESSION_STORAGE_KEY = 'baanshaihad_admin_session';
         let adminSessionToken = '';
         let currentUsername = '';
         let currentRole = '';
@@ -300,21 +308,91 @@
                 adminSessionToken = result.data.sessionToken;
                 currentUsername = result.data.username;
                 currentRole = result.data.role;
+                let sessionStorageError = null;
+                try {
+                    saveAdminSession();
+                } catch (error) {
+                    sessionStorageError = error;
+                }
                 byId('login-password').value = '';
-                byId('login-panel').classList.add('hidden');
-                byId('admin-panel').classList.remove('hidden');
-                byId('account-actions').classList.remove('hidden');
-                byId('account-actions').classList.add('flex');
-                byId('signed-in-user').textContent = `ผู้ดูแล: ${currentUsername}`;
-                byId('users-tab').classList.toggle('hidden', currentUsername !== 'robojorj' || currentRole !== 'superadmin');
-                showPanel('bookings');
+                showAdminPanel();
                 await loadBookings();
+                if (sessionStorageError) {
+                    showNotice('เข้าสู่ระบบแล้ว แต่บันทึกเซสชันในเบราว์เซอร์ไม่สำเร็จ', 'error');
+                    console.error(sessionStorageError);
+                }
             } catch (error) {
                 showLoginError(error.message);
             } finally {
                 button.disabled = false;
                 button.textContent = 'เข้าสู่ระบบ';
             }
+        }
+
+        function saveAdminSession() {
+            window.localStorage.setItem(ADMIN_SESSION_STORAGE_KEY, JSON.stringify({
+                sessionToken: adminSessionToken,
+                username: currentUsername,
+                role: currentRole
+            }));
+        }
+
+        async function restoreAdminSession() {
+            let savedSession;
+            let serialized;
+            try {
+                serialized = window.localStorage.getItem(ADMIN_SESSION_STORAGE_KEY);
+            } catch (error) {
+                showLoginError('เบราว์เซอร์ไม่อนุญาตให้อ่านข้อมูลเซสชัน กรุณาเข้าสู่ระบบใหม่');
+                console.error(error);
+                return;
+            }
+            if (!serialized) return;
+
+            try {
+                savedSession = JSON.parse(serialized);
+            } catch (error) {
+                const sessionCleared = clearAdminSession();
+                showLoginError(sessionCleared
+                    ? 'ไม่สามารถอ่านข้อมูลเซสชันได้ กรุณาเข้าสู่ระบบใหม่'
+                    : 'ไม่สามารถอ่านหรือลบข้อมูลเซสชันได้ กรุณาตรวจสอบการตั้งค่าเบราว์เซอร์');
+                return;
+            }
+
+            if (!savedSession || typeof savedSession.sessionToken !== 'string' ||
+                !savedSession.sessionToken || typeof savedSession.username !== 'string' ||
+                typeof savedSession.role !== 'string') {
+                if (!clearAdminSession()) {
+                    showLoginError('ข้อมูลเซสชันไม่ถูกต้องและไม่สามารถลบออกจากเบราว์เซอร์ได้');
+                }
+                return;
+            }
+
+            adminSessionToken = savedSession.sessionToken;
+            currentUsername = savedSession.username;
+            currentRole = savedSession.role;
+            showAdminPanel();
+            await loadBookings();
+        }
+
+        function clearAdminSession() {
+            try {
+                window.localStorage.removeItem(ADMIN_SESSION_STORAGE_KEY);
+                return true;
+            } catch (error) {
+                console.error(error);
+                return false;
+            }
+        }
+
+        function showAdminPanel() {
+            byId('login-panel').classList.add('hidden');
+            byId('admin-panel').classList.remove('hidden');
+            byId('account-actions').classList.remove('hidden');
+            byId('account-actions').classList.add('flex');
+            byId('signed-in-user').textContent = `ผู้ดูแล: ${currentUsername}`;
+            byId('users-tab').classList.toggle('hidden', currentUsername !== 'robojorj' || currentRole !== 'superadmin');
+            showPanel('bookings');
         }
 
         function sendAdminRequest(action, data = {}) {
@@ -445,6 +523,7 @@
         }
 
         function getCalendarStatus(dayBookings) {
+            if (dayBookings.some(booking => normalizeStatus(booking.status) === 'complete')) return 'complete';
             if (dayBookings.some(booking => normalizeStatus(booking.status) === 'confirmed')) return 'confirmed';
             if (dayBookings.some(booking => normalizeStatus(booking.status) === 'booking')) return 'booking';
             return dayBookings.length ? 'cancel' : 'available';
@@ -477,7 +556,7 @@
                 const nightlyRate = dayOfWeek === 0 || dayOfWeek === 5 || dayOfWeek === 6
                     ? WEEKEND_RATE
                     : WEEKDAY_RATE;
-                const showNightlyRate = date >= todayDate && status !== 'booking' && status !== 'confirmed';
+                const showNightlyRate = date >= todayDate && !['booking', 'confirmed', 'complete'].includes(status);
                 const button = document.createElement('button');
                 button.type = 'button';
                 button.className = 'min-h-14 rounded-xl border p-1.5 text-left transition-colors hover:ring-2 hover:ring-teal-500 sm:min-h-16 sm:p-2';
@@ -485,6 +564,8 @@
                     button.classList.add('border-amber-300', 'bg-amber-100', 'text-amber-900');
                 } else if (status === 'confirmed') {
                     button.classList.add('border-rose-300', 'bg-rose-100', 'text-rose-900');
+                } else if (status === 'complete') {
+                    button.classList.add('border-emerald-300', 'bg-emerald-100', 'text-emerald-900');
                 } else if (status === 'cancel') {
                     button.classList.add('border-slate-300', 'bg-slate-100', 'text-slate-600');
                 } else {
@@ -501,8 +582,8 @@
                 button.appendChild(dayNumber);
                 if (showNightlyRate) {
                     const rateText = document.createElement('span');
-                    rateText.className = `mt-1 block truncate text-[10px] font-semibold ${dayOfWeek === 0 || dayOfWeek === 5 || dayOfWeek === 6 ? 'text-amber-600' : 'text-slate-500'}`;
-                    rateText.textContent = `฿${(nightlyRate / 1000).toFixed(1)}k${status === 'cancel' ? ` · ${statusLabel(status)}` : ''}`;
+                    rateText.className = `mt-1 block whitespace-nowrap text-[8px] font-semibold sm:text-[10px] ${dayOfWeek === 0 || dayOfWeek === 5 || dayOfWeek === 6 ? 'text-amber-600' : 'text-slate-500'}`;
+                    rateText.textContent = `฿${nightlyRate.toLocaleString('th-TH')}${status === 'cancel' ? ` · ${statusLabel(status)}` : ''}`;
                     button.appendChild(rateText);
                 } else if (dayBookings.length) {
                     const statusText = document.createElement('span');
@@ -578,6 +659,7 @@
             byId('total-count').textContent = monthBookings.length;
             byId('pending-count').textContent = monthBookings.filter(item => normalizeStatus(item.status) === 'booking').length;
             byId('confirmed-count').textContent = monthBookings.filter(item => normalizeStatus(item.status) === 'confirmed').length;
+            byId('complete-count').textContent = monthBookings.filter(item => normalizeStatus(item.status) === 'complete').length;
             byId('loading-state').classList.add('hidden');
             byId('booking-table-wrap').classList.toggle('hidden', filtered.length === 0);
             byId('empty-state').classList.toggle('hidden', filtered.length !== 0);
@@ -643,7 +725,7 @@
         }
 
         function statusLabel(status) {
-            return { booking: 'รอยืนยัน', confirmed: 'ยืนยันแล้ว', cancel: 'ยกเลิก' }[normalizeStatus(status)] || status;
+            return { booking: 'รอยืนยัน', confirmed: 'ยืนยันแล้ว', complete: 'เข้าพักแล้ว', cancel: 'ยกเลิก' }[normalizeStatus(status)] || status;
         }
 
         function statusClass(status) {
@@ -651,6 +733,7 @@
             const colors = {
                 booking: 'bg-amber-100 text-amber-800',
                 confirmed: 'bg-rose-100 text-rose-800',
+                complete: 'bg-emerald-100 text-emerald-800',
                 cancel: 'bg-slate-100 text-slate-600'
             };
             return `inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${colors[normalized] || 'bg-slate-100 text-slate-700'}`;
@@ -885,6 +968,7 @@
         }
 
         function signOut(message = '') {
+            const sessionCleared = clearAdminSession();
             adminSessionToken = '';
             currentUsername = '';
             currentRole = '';
@@ -894,6 +978,7 @@
             byId('account-actions').classList.remove('flex');
             byId('login-panel').classList.remove('hidden');
             if (message) showLoginError(message);
+            if (!sessionCleared) showNotice('ออกจากระบบในหน้านี้แล้ว แต่เบราว์เซอร์ลบเซสชันที่บันทึกไว้ไม่สำเร็จ', 'error');
         }
 
         function showLoginError(message) {
@@ -929,6 +1014,7 @@
         byId('edit-user-form').addEventListener('submit', saveUser);
         byId('cancel-user-edit').addEventListener('click', () => byId('user-dialog').close());
         byId('change-password-form').addEventListener('submit', changeOwnPassword);
+        restoreAdminSession();
     </script>
 </body>
 </html>

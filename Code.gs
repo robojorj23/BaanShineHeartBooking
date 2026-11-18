@@ -1,4 +1,5 @@
 const ADMIN_PASSWORD_HASH_ITERATIONS = 4000;
+const ADMIN_SESSION_DURATION_SECONDS = 30 * 24 * 60 * 60;
 
 function doGet(e) {
   const callback = e && e.parameter ? e.parameter.callback : '';
@@ -212,7 +213,7 @@ function createAdminSession_(user) {
   const payload = Utilities.base64EncodeWebSafe(JSON.stringify({
     username: user.username,
     sessionVersion: user.sessionVersion,
-    expiresAt: Math.floor(Date.now() / 1000) + 8 * 60 * 60,
+    expiresAt: Math.floor(Date.now() / 1000) + ADMIN_SESSION_DURATION_SECONDS,
     nonce: Utilities.getUuid()
   }));
   const signature = Utilities.base64EncodeWebSafe(
@@ -509,8 +510,8 @@ function updateAdminBooking_(booking) {
         !isValidIsoDate_(checkOut) || checkOut <= checkIn) {
       return { status: 'error', message: 'กรุณาตรวจสอบรหัส ชื่อ เบอร์โทร และช่วงวันที่' };
     }
-    if (['booking', 'confirmed', 'cancel'].indexOf(status) < 0) {
-      return { status: 'error', message: 'สถานะต้องเป็น booking, confirmed หรือ cancel' };
+    if (['booking', 'confirmed', 'complete', 'cancel'].indexOf(status) < 0) {
+      return { status: 'error', message: 'สถานะต้องเป็น booking, confirmed, complete หรือ cancel' };
     }
     if (!Number.isFinite(totalPrice) || totalPrice < 0 || comment.length > 5000) {
       return { status: 'error', message: 'กรุณาตรวจสอบยอดเงินหรือข้อความเพิ่มเติม' };
@@ -826,9 +827,10 @@ function getRowStatus_(row, statusColumns) {
     return String(row[index] || '').trim();
   }).filter(Boolean);
   const cancelled = statuses.find(isCancelledStatus_);
+  const complete = statuses.find(function(status) { return status.toLowerCase() === 'complete'; });
   const confirmed = statuses.find(function(status) { return status.toLowerCase() === 'confirmed'; });
   const booking = statuses.find(function(status) { return status.toLowerCase() === 'booking'; });
-  return cancelled || confirmed || booking || statuses[0] || 'confirmed';
+  return cancelled || complete || confirmed || booking || statuses[0] || 'confirmed';
 }
 
 function isCancelledStatus_(status) {
