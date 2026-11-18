@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>จัดการการจอง | บ้านชายหาด</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Prompt', sans-serif; }
+        dialog::backdrop { background: rgb(15 23 42 / 65%); backdrop-filter: blur(3px); }
+    </style>
+</head>
+<body class="min-h-screen bg-slate-50 text-slate-800">
+    <header class="bg-white border-b border-slate-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex flex-wrap items-center justify-between gap-3">
+            <div>
+                <p class="text-xs font-semibold tracking-widest text-teal-700">BAAN SHINE HEART</p>
+                <h1 class="text-2xl font-bold text-slate-900">จัดการรายการจอง</h1>
+            </div>
+            <div id="account-actions" class="hidden items-center gap-3">
+                <span id="signed-in-user" class="text-sm text-slate-600"></span>
+                <button id="refresh-button" type="button" class="rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium hover:bg-slate-50">รีเฟรช</button>
+                <button id="signout-button" type="button" class="rounded-lg bg-slate-800 px-3 py-2 text-sm font-medium text-white hover:bg-slate-700">ออกจากระบบ</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+        <section id="login-panel" class="max-w-xl mx-auto rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm">
+            <h2 class="text-xl font-bold text-slate-900">เข้าสู่ระบบผู้ดูแล</h2>
+            <p class="mt-2 text-sm text-slate-600">กรอก username และ password ของบัญชีผู้ดูแล</p>
+            <div id="login-error" class="hidden mt-4 rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800"></div>
+            <form id="login-form" class="mt-6 space-y-4">
+                <label class="block text-sm font-medium">Username
+                    <input id="login-username" required autocomplete="username" maxlength="30" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2">
+                </label>
+                <label class="block text-sm font-medium">Password
+                    <input id="login-password" type="password" required maxlength="128" autocomplete="current-password" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2">
+                </label>
+                <button id="login-button" type="submit" class="w-full rounded-lg bg-teal-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-teal-800">เข้าสู่ระบบ</button>
+            </form>
+            <details class="mt-6 rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+                <summary class="cursor-pointer font-semibold text-slate-800">ตั้งค่าผู้ดูแลครั้งแรก</summary>
+                <ol class="mt-3 list-decimal space-y-2 pl-5">
+                    <li>ใน Apps Script → Project Settings → Script Properties เพิ่ม <code>ADMIN_BOOTSTRAP_PASSWORD</code> เป็นรหัสเริ่มต้นที่คุณตั้งเอง ความยาว 8-128 ตัวอักษร</li>
+                    <li>ในหน้า Apps Script เลือกฟังก์ชัน <code>setupInitialAdmin</code> แล้วกด Run เพื่อสร้างชีต <code>user</code> และบัญชี <code>robojorj</code></li>
+                    <li>หากมีบัญชี <code>robojorj</code> อยู่แล้ว ให้เลือก <code>resetInitialAdminPassword</code> เพื่อเปลี่ยนเป็นรหัสใหม่</li>
+                    <li>ฟังก์ชันจะลบค่า bootstrap password หลังสร้างหรือรีเซ็ตรหัสผ่าน โดยเก็บรหัสผ่านเป็น hash ไม่เก็บเป็นข้อความ</li>
+                    <li>Deploy Apps Script เวอร์ชันใหม่ก่อนเริ่มใช้งาน</li>
+                </ol>
+            </details>
+        </section>
+
+        <section id="admin-panel" class="hidden">
+            <nav class="mb-5 flex flex-wrap gap-2">
+                <button id="bookings-tab" type="button" class="rounded-lg bg-teal-700 px-4 py-2 text-sm font-semibold text-white">รายการจอง</button>
+                <button id="users-tab" type="button" class="hidden rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">จัดการแอดมิน</button>
+                <button id="password-tab" type="button" class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">เปลี่ยนรหัสผ่าน</button>
+            </nav>
+            <div id="bookings-panel">
+            <div class="grid gap-4 sm:grid-cols-3 mb-6">
+                <div class="rounded-2xl bg-white border border-slate-200 p-5 shadow-sm">
+                    <p class="text-sm text-slate-500">รายการจองในเดือนที่เลือก</p>
+                    <p id="total-count" class="mt-1 text-3xl font-bold text-slate-900">0</p>
+                </div>
+                <div class="rounded-2xl bg-amber-50 border border-amber-200 p-5">
+                    <p class="text-sm text-amber-800">รอยืนยัน (booking)</p>
+                    <p id="pending-count" class="mt-1 text-3xl font-bold text-amber-900">0</p>
+                </div>
+                <div class="rounded-2xl bg-rose-50 border border-rose-200 p-5">
+                    <p class="text-sm text-rose-800">ยืนยันแล้ว (confirmed)</p>
+                    <p id="confirmed-count" class="mt-1 text-3xl font-bold text-rose-900">0</p>
+                </div>
+            </div>
+
+            <section class="mb-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                        <h2 id="calendar-month-year" class="text-xl font-bold text-slate-900">กำลังโหลดปฏิทิน...</h2>
+                        <p class="mt-1 text-xs text-slate-500">คลิกวันที่มีรายการจองเพื่อเปิดและแก้ไขข้อมูล</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button id="calendar-previous" type="button" aria-label="เดือนก่อนหน้า" class="rounded-lg border border-slate-300 px-3 py-2 text-sm hover:bg-slate-50">‹</button>
+                        <button id="calendar-current" type="button" class="rounded-lg border border-slate-300 px-3 py-2 text-xs font-medium hover:bg-slate-50">เดือนนี้</button>
+                        <button id="calendar-next" type="button" aria-label="เดือนถัดไป" class="rounded-lg border border-slate-300 px-3 py-2 text-sm hover:bg-slate-50">›</button>
+                    </div>
+                </div>
+                <div class="mt-4 flex flex-wrap gap-x-4 gap-y-2 border-t border-slate-100 pt-4 text-xs text-slate-600">
+                    <span class="inline-flex items-center gap-2"><span class="h-3 w-3 rounded bg-white border border-slate-300"></span>ว่าง</span>
+                    <span class="inline-flex items-center gap-2"><span class="h-3 w-3 rounded bg-amber-100 border border-amber-300"></span>รอยืนยัน</span>
+                    <span class="inline-flex items-center gap-2"><span class="h-3 w-3 rounded bg-rose-100 border border-rose-300"></span>ยืนยันแล้ว</span>
+                    <span class="inline-flex items-center gap-2"><span class="h-3 w-3 rounded bg-slate-100 border border-slate-300"></span>ยกเลิก</span>
+                </div>
+                <div class="mt-3 grid grid-cols-7 border-b border-slate-100 py-2 text-center text-xs font-semibold text-slate-500">
+                    <span class="text-rose-600">อา.</span><span>จ.</span><span>อ.</span><span>พ.</span>
+                    <span>พฤ.</span><span>ศ.</span><span class="text-teal-700">ส.</span>
+                </div>
+                <div id="calendar-days-grid" class="grid grid-cols-7 gap-1.5 pt-3 sm:gap-2"></div>
+                <div id="calendar-day-bookings" class="hidden mt-4 rounded-xl border border-teal-100 bg-teal-50 p-4">
+                    <h3 id="calendar-day-title" class="text-sm font-semibold text-slate-800"></h3>
+                    <div id="calendar-day-booking-list" class="mt-2 flex flex-wrap gap-2"></div>
+                </div>
+            </section>
+
+            <div class="rounded-2xl border border-slate-200 bg-white shadow-sm">
+                <div class="flex flex-col gap-3 border-b border-slate-200 p-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <h2 id="booking-month-title" class="text-lg font-bold text-slate-900">รายการจองประจำเดือน</h2>
+                        <p class="text-xs text-slate-500">แสดงรายการที่เข้าพักในเดือนที่เลือก ปรับเดือนจากปฏิทินด้านบน</p>
+                    </div>
+                    <div class="flex flex-col gap-2 sm:flex-row">
+                        <input id="search-input" type="search" placeholder="ค้นหารหัส ชื่อ หรือเบอร์โทร" class="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-teal-600 focus:outline-none">
+                        <select id="status-filter" class="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-teal-600 focus:outline-none">
+                            <option value="all">ทุกสถานะ</option>
+                            <option value="booking">รอยืนยัน</option>
+                            <option value="confirmed">ยืนยันแล้ว</option>
+                            <option value="cancel">ยกเลิก</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="loading-state" class="p-10 text-center text-sm text-slate-500">กำลังโหลดรายการ...</div>
+                <div id="empty-state" class="hidden p-10 text-center text-sm text-slate-500">ไม่พบรายการจอง</div>
+                <div id="booking-table-wrap" class="hidden overflow-x-auto">
+                    <table class="w-full min-w-[1000px] text-left text-sm">
+                        <thead class="bg-slate-50 text-xs uppercase text-slate-500">
+                            <tr>
+                                <th class="px-4 py-3">รหัส / ผู้จอง</th>
+                                <th class="px-4 py-3">วันเข้าพัก - เช็คเอาท์</th>
+                                <th class="px-4 py-3">จำนวนคืน / คน</th>
+                                <th class="px-4 py-3">ยอดชำระ</th>
+                                <th class="px-4 py-3">สถานะ</th>
+                                <th class="px-4 py-3">คำขอเพิ่มเติม</th>
+                                <th class="px-4 py-3">สร้างเมื่อ</th>
+                                <th class="px-4 py-3"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="booking-rows" class="divide-y divide-slate-100"></tbody>
+                    </table>
+                </div>
+            </div>
+            </div>
+            <section id="users-panel" class="hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
+                <div>
+                    <h2 class="text-lg font-bold text-slate-900">จัดการบัญชีแอดมิน</h2>
+                    <p class="text-xs text-slate-500">บัญชี robojorj เพิ่ม แก้ username เปลี่ยนรหัสผ่าน หรือปิดใช้งานแอดมินได้</p>
+                </div>
+                <form id="create-user-form" class="mt-5 grid gap-3 rounded-xl bg-slate-50 p-4 sm:grid-cols-3">
+                    <label class="text-sm font-medium">Username
+                        <input id="new-username" required minlength="3" maxlength="30" pattern="[a-zA-Z0-9][a-zA-Z0-9._-]{2,29}" autocomplete="off" class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2">
+                    </label>
+                    <label class="text-sm font-medium">Password (อย่างน้อย 8 ตัว)
+                        <input id="new-password" type="password" required minlength="8" maxlength="128" autocomplete="new-password" class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2">
+                    </label>
+                    <button id="create-user-button" type="submit" class="self-end rounded-lg bg-teal-700 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-800">เพิ่มแอดมิน</button>
+                </form>
+                <div id="users-error" class="hidden mt-3 rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800"></div>
+                <div class="mt-5 overflow-x-auto">
+                    <table class="w-full min-w-[700px] text-left text-sm">
+                        <thead class="bg-slate-50 text-xs uppercase text-slate-500">
+                            <tr>
+                                <th class="px-3 py-3">Username</th>
+                                <th class="px-3 py-3">สิทธิ์</th>
+                                <th class="px-3 py-3">สถานะ</th>
+                                <th class="px-3 py-3">สร้างเมื่อ</th>
+                                <th class="px-3 py-3">จัดการ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="user-rows" class="divide-y divide-slate-100"></tbody>
+                    </table>
+                </div>
+            </section>
+            <section id="password-panel" class="hidden max-w-xl rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+                <h2 class="text-lg font-bold text-slate-900">เปลี่ยนรหัสผ่านของฉัน</h2>
+                <form id="change-password-form" class="mt-4 space-y-4">
+                    <label class="block text-sm font-medium">รหัสผ่านปัจจุบัน
+                        <input id="current-password" type="password" required autocomplete="current-password" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2">
+                    </label>
+                    <label class="block text-sm font-medium">รหัสผ่านใหม่ (อย่างน้อย 8 ตัว)
+                        <input id="own-new-password" type="password" required minlength="8" maxlength="128" autocomplete="new-password" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2">
+                    </label>
+                    <div id="password-error" class="hidden rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800"></div>
+                    <button id="change-password-button" type="submit" class="rounded-lg bg-teal-700 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-800">บันทึกรหัสผ่านใหม่</button>
+                </form>
+            </section>
+        </section>
+        <div id="notice" class="hidden fixed bottom-5 right-5 z-40 max-w-sm rounded-xl px-4 py-3 text-sm text-white shadow-lg"></div>
+    </main>
+
+    <dialog id="edit-dialog" class="w-[min(96vw,680px)] rounded-2xl p-0 shadow-2xl">
+        <form id="edit-form" class="space-y-5 p-5 sm:p-7">
+            <div class="flex items-start justify-between gap-4">
+                <div>
+                    <p class="text-xs font-semibold tracking-wide text-teal-700">แก้ไขข้อมูลการจอง</p>
+                    <h2 id="edit-title" class="mt-1 text-xl font-bold text-slate-900"></h2>
+                </div>
+                <button id="close-dialog" type="button" class="rounded-lg px-3 py-1 text-2xl leading-none text-slate-500 hover:bg-slate-100" aria-label="ปิด">&times;</button>
+            </div>
+
+            <input id="edit-id" type="hidden">
+            <div class="grid gap-4 sm:grid-cols-2">
+                <label class="text-sm font-medium">ชื่อผู้จอง
+                    <input id="edit-name" required maxlength="200" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2">
+                </label>
+                <label class="text-sm font-medium">เบอร์โทรศัพท์
+                    <input id="edit-phone" required maxlength="50" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2">
+                </label>
+                <label class="text-sm font-medium">วันเข้าพัก
+                    <input id="edit-checkin" type="date" required class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2">
+                </label>
+                <label class="text-sm font-medium">วันเช็คเอาท์
+                    <input id="edit-checkout" type="date" required class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2">
+                </label>
+                <label class="text-sm font-medium">จำนวนคืน
+                    <input id="edit-nights" readonly class="mt-1 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-slate-600">
+                </label>
+                <label class="text-sm font-medium">จำนวนผู้เข้าพัก
+                    <input id="edit-people" required maxlength="100" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2">
+                </label>
+                <label class="text-sm font-medium">ยอดชำระ (บาท)
+                    <input id="edit-price" type="number" min="0" step="1" required class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2">
+                </label>
+                <label class="text-sm font-medium">สถานะ
+                    <select id="edit-status" required class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2">
+                        <option value="booking">booking — รอยืนยัน</option>
+                        <option value="confirmed">confirmed — ยืนยันแล้ว</option>
+                        <option value="cancel">cancel — ยกเลิก/เปิดวันว่าง</option>
+                    </select>
+                </label>
+                <label class="text-sm font-medium sm:col-span-2">คำขอเพิ่มเติม
+                    <textarea id="edit-comment" rows="3" maxlength="5000" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"></textarea>
+                </label>
+                <p id="created-at" class="text-xs text-slate-500 sm:col-span-2"></p>
+            </div>
+            <div id="edit-error" class="hidden rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800"></div>
+            <div class="flex justify-end gap-3 border-t border-slate-100 pt-4">
+                <button id="cancel-edit" type="button" class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold hover:bg-slate-50">ยกเลิก</button>
+                <button id="save-edit" type="submit" class="rounded-lg bg-teal-700 px-5 py-2 text-sm font-semibold text-white hover:bg-teal-800">บันทึกการแก้ไข</button>
+            </div>
+        </form>
+    </dialog>
+    <dialog id="user-dialog" class="w-[min(96vw,480px)] rounded-2xl p-0 shadow-2xl">
+        <form id="edit-user-form" class="space-y-4 p-5 sm:p-6">
+            <div>
+                <p class="text-xs font-semibold tracking-wide text-teal-700">จัดการบัญชีแอดมิน</p>
+                <h2 id="edit-user-title" class="mt-1 text-xl font-bold text-slate-900"></h2>
+            </div>
+            <input id="original-username" type="hidden">
+            <label class="block text-sm font-medium">Username
+                <input id="edit-username" required minlength="3" maxlength="30" pattern="[a-zA-Z0-9][a-zA-Z0-9._-]{2,29}" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2">
+            </label>
+            <label class="block text-sm font-medium">ตั้งรหัสผ่านใหม่ (เว้นว่างหากไม่เปลี่ยน)
+                <input id="edit-user-password" type="password" minlength="8" maxlength="128" autocomplete="new-password" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2">
+            </label>
+            <label class="flex items-center gap-2 text-sm font-medium">
+                <input id="edit-user-active" type="checkbox" class="h-4 w-4 rounded border-slate-300">
+                บัญชีเปิดใช้งาน
+            </label>
+            <div id="edit-user-error" class="hidden rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800"></div>
+            <div class="flex justify-end gap-3 border-t border-slate-100 pt-4">
+                <button id="cancel-user-edit" type="button" class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold hover:bg-slate-50">ยกเลิก</button>
+                <button id="save-user-edit" type="submit" class="rounded-lg bg-teal-700 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-800">บันทึก</button>
+            </div>
+        </form>
+    </dialog>
+
+    <script>
+        const GOOGLE_SHEET_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbwc3TfRwnd3jJRlfa3wWT-6OltZlw4zRJyDYIYCECa3HR9RCNweAYnvWw4paKvWcO-jpw/exec';
+        let adminSessionToken = '';
+        let currentUsername = '';
+        let currentRole = '';
+        let bookings = [];
+        let adminUsers = [];
+        let calendarYear = new Date().getFullYear();
+        let calendarMonth = new Date().getMonth();
+        let selectedCalendarDate = '';
+
+        const byId = id => document.getElementById(id);
+
+        async function loginAdmin(event) {
+            event.preventDefault();
+            const button = byId('login-button');
+            button.disabled = true;
+            button.textContent = 'กำลังตรวจสอบ...';
+            byId('login-error').classList.add('hidden');
+            try {
+                const result = await sendAdminRequest('login', {
+                    username: byId('login-username').value.trim(),
+                    password: byId('login-password').value
+                });
+                if (!result || result.status !== 'success' || !result.data) {
+                    throw new Error(result && result.message ? result.message : 'เข้าสู่ระบบไม่สำเร็จ');
+                }
+                adminSessionToken = result.data.sessionToken;
+                currentUsername = result.data.username;
+                currentRole = result.data.role;
+                byId('login-password').value = '';
+                byId('login-panel').classList.add('hidden');
+                byId('admin-panel').classList.remove('hidden');
+                byId('account-actions').classList.remove('hidden');
+                byId('account-actions').classList.add('flex');
+                byId('signed-in-user').textContent = `ผู้ดูแล: ${currentUsername}`;
+                byId('users-tab').classList.toggle('hidden', currentUsername !== 'robojorj' || currentRole !== 'superadmin');
+                showPanel('bookings');
+                await loadBookings();
+            } catch (error) {
+                showLoginError(error.message);
+            } finally {
+                button.disabled = false;
+                button.textContent = 'เข้าสู่ระบบ';
+            }
+        }
+
+        function sendAdminRequest(action, data = {}) {
+            return new Promise((resolve, reject) => {
+                const nonceBytes = new Uint32Array(4);
+                window.crypto.getRandomValues(nonceBytes);
+                const nonce = Array.from(nonceBytes, value => value.toString(36)).join('-');
+                const frame = document.createElement('iframe');
+                const form = document.createElement('form');
+                const frameName = `bshAdmin_${nonce.replace(/[^a-zA-Z0-9]/g, '')}`;
+                let timeout;
+                frame.name = frameName;
+                frame.hidden = true;
+                form.method = 'POST';
+                form.action = GOOGLE_SHEET_WEBAPP_URL;
+                form.target = frameName;
+                form.hidden = true;
+
+                const fields = {
+                    action: 'admin',
+                    nonce: nonce,
+                    payload: JSON.stringify({ ...data, action, session_token: adminSessionToken })
+                };
+                Object.entries(fields).forEach(([name, value]) => {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = name;
+                    input.value = value;
+                    form.appendChild(input);
+                });
+
+                function cleanup() {
+                    clearTimeout(timeout);
+                    window.removeEventListener('message', handleMessage);
+                    form.remove();
+                    frame.remove();
+                }
+                function isExpectedFrameSource(source) {
+                    let current = source;
+                    while (current && current !== window) {
+                        if (current === frame.contentWindow) return true;
+                        try {
+                            current = current.parent;
+                        } catch (error) {
+                            return false;
+                        }
+                    }
+                    return false;
+                }
+                function handleMessage(event) {
+                    const message = event.data;
+                    const isAppsScriptOrigin = event.origin === 'https://script.google.com' ||
+                        event.origin === 'https://script.googleusercontent.com' ||
+                        event.origin.endsWith('.script.googleusercontent.com');
+                    if ((!isAppsScriptOrigin && !isExpectedFrameSource(event.source)) ||
+                        !message || message.type !== 'bsh-booking-result' || message.nonce !== nonce) return;
+                    cleanup();
+                    resolve(message.result);
+                }
+
+                window.addEventListener('message', handleMessage);
+                timeout = setTimeout(() => {
+                    cleanup();
+                    reject(new Error('ติดต่อ Google Sheets ไม่สำเร็จ กรุณาลองใหม่'));
+                }, 90000);
+                document.body.append(frame, form);
+                try {
+                    form.submit();
+                } catch (error) {
+                    cleanup();
+                    reject(error);
+                }
+            });
+        }
+
+        async function loadBookings() {
+            setTableLoading(true);
+            try {
+                const result = await sendAdminRequest('list');
+                if (!result || result.status !== 'success' || !Array.isArray(result.data)) {
+                    if (result && /สิทธิ์|เข้าสู่ระบบ|ตั้งค่า|เซสชัน|บัญชีถูกปิด/.test(result.message || '')) signOut(result.message);
+                    throw new Error(result && result.message ? result.message : 'โหลดรายการจองไม่สำเร็จ');
+                }
+                bookings = result.data;
+                renderBookings();
+            } catch (error) {
+                showNotice(error.message, 'error');
+                byId('loading-state').classList.add('hidden');
+            }
+        }
+
+        function setTableLoading(loading) {
+            byId('loading-state').classList.toggle('hidden', !loading);
+            byId('booking-table-wrap').classList.toggle('hidden', loading);
+            byId('empty-state').classList.add('hidden');
+        }
+
+        function formatCalendarDate(year, month, day) {
+            return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        }
+
+        function getCalendarMonthName() {
+            return [
+                'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+                'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
+            ][calendarMonth];
+        }
+
+        function getBookingsForMonth() {
+            const monthStart = formatCalendarDate(calendarYear, calendarMonth, 1);
+            const nextMonth = new Date(calendarYear, calendarMonth + 1, 1);
+            const monthEnd = formatCalendarDate(nextMonth.getFullYear(), nextMonth.getMonth(), 1);
+            return bookings.filter(booking =>
+                booking.checkIn && booking.checkOut &&
+                booking.checkIn < monthEnd && booking.checkOut > monthStart);
+        }
+
+        function getBookingsForDate(date) {
+            return bookings.filter(booking =>
+                booking.checkIn && booking.checkOut &&
+                booking.checkIn <= date && date < booking.checkOut)
+                .sort((left, right) => {
+                    const leftCancelled = normalizeStatus(left.status) === 'cancel';
+                    const rightCancelled = normalizeStatus(right.status) === 'cancel';
+                    if (leftCancelled !== rightCancelled) return leftCancelled ? 1 : -1;
+                    return String(right.createdAt || '').localeCompare(String(left.createdAt || ''));
+                });
+        }
+
+        function getCalendarStatus(dayBookings) {
+            if (dayBookings.some(booking => normalizeStatus(booking.status) === 'confirmed')) return 'confirmed';
+            if (dayBookings.some(booking => normalizeStatus(booking.status) === 'booking')) return 'booking';
+            return dayBookings.length ? 'cancel' : 'available';
+        }
+
+        function renderCalendar() {
+            const monthName = getCalendarMonthName();
+            byId('calendar-month-year').textContent = `${monthName} ${calendarYear + 543}`;
+            byId('booking-month-title').textContent = `รายการจองเดือน${monthName} ${calendarYear + 543}`;
+
+            const grid = byId('calendar-days-grid');
+            grid.replaceChildren();
+            const firstDay = new Date(calendarYear, calendarMonth, 1).getDay();
+            const daysInMonth = new Date(calendarYear, calendarMonth + 1, 0).getDate();
+
+            for (let blank = 0; blank < firstDay; blank++) {
+                const spacer = document.createElement('div');
+                spacer.className = 'min-h-14 sm:min-h-16';
+                spacer.setAttribute('aria-hidden', 'true');
+                grid.appendChild(spacer);
+            }
+
+            for (let day = 1; day <= daysInMonth; day++) {
+                const date = formatCalendarDate(calendarYear, calendarMonth, day);
+                const dayBookings = getBookingsForDate(date);
+                const status = getCalendarStatus(dayBookings);
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'min-h-14 rounded-xl border p-1.5 text-left transition-colors hover:ring-2 hover:ring-teal-500 sm:min-h-16 sm:p-2';
+                if (status === 'booking') {
+                    button.classList.add('border-amber-300', 'bg-amber-100', 'text-amber-900');
+                } else if (status === 'confirmed') {
+                    button.classList.add('border-rose-300', 'bg-rose-100', 'text-rose-900');
+                } else if (status === 'cancel') {
+                    button.classList.add('border-slate-300', 'bg-slate-100', 'text-slate-600');
+                } else {
+                    button.classList.add('border-slate-200', 'bg-white', 'text-slate-800');
+                }
+                if (date === selectedCalendarDate) button.classList.add('ring-2', 'ring-teal-700');
+                button.setAttribute('aria-label', `${date}${dayBookings.length ? ` มี ${dayBookings.length} รายการ` : ' ว่าง'}`);
+
+                const dayNumber = document.createElement('span');
+                dayNumber.className = 'block text-sm font-bold';
+                dayNumber.textContent = day;
+                button.appendChild(dayNumber);
+                if (dayBookings.length) {
+                    const statusText = document.createElement('span');
+                    statusText.className = 'mt-1 block truncate text-[10px] font-semibold';
+                    statusText.textContent = dayBookings.length > 1
+                        ? `${statusLabel(status)} · ${dayBookings.length} รายการ`
+                        : statusLabel(status);
+                    button.appendChild(statusText);
+                }
+                button.addEventListener('click', () => handleCalendarDayClick(date));
+                grid.appendChild(button);
+            }
+        }
+
+        function handleCalendarDayClick(date) {
+            selectedCalendarDate = date;
+            renderCalendar();
+            const dayBookings = getBookingsForDate(date);
+            const selection = byId('calendar-day-bookings');
+            const title = byId('calendar-day-title');
+            const list = byId('calendar-day-booking-list');
+            list.replaceChildren();
+
+            if (dayBookings.length === 1) {
+                selection.classList.add('hidden');
+                openEditDialog(dayBookings[0]);
+                return;
+            }
+
+            selection.classList.remove('hidden');
+            title.textContent = dayBookings.length
+                ? `รายการจองวันที่ ${date} — เลือกรายการที่ต้องการแก้ไข`
+                : `วันที่ ${date} ไม่มีรายการจอง`;
+            dayBookings.forEach(booking => {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'rounded-lg border border-teal-200 bg-white px-3 py-2 text-left text-xs hover:border-teal-500';
+                button.textContent = `${booking.id} · ${booking.name || 'ไม่ระบุชื่อ'} · ${statusLabel(booking.status)}`;
+                button.addEventListener('click', () => openEditDialog(booking));
+                list.appendChild(button);
+            });
+        }
+
+        function changeCalendarMonth(delta) {
+            const nextMonth = new Date(calendarYear, calendarMonth + delta, 1);
+            calendarYear = nextMonth.getFullYear();
+            calendarMonth = nextMonth.getMonth();
+            selectedCalendarDate = '';
+            byId('calendar-day-bookings').classList.add('hidden');
+            renderBookings();
+        }
+
+        function showCurrentCalendarMonth() {
+            const now = new Date();
+            calendarYear = now.getFullYear();
+            calendarMonth = now.getMonth();
+            selectedCalendarDate = '';
+            byId('calendar-day-bookings').classList.add('hidden');
+            renderBookings();
+        }
+
+        function renderBookings() {
+            const query = byId('search-input').value.trim().toLowerCase();
+            const statusFilter = byId('status-filter').value;
+            const monthBookings = getBookingsForMonth();
+            const filtered = monthBookings.filter(booking => {
+                const matchesQuery = [booking.id, booking.name, booking.phone].some(value =>
+                    String(value || '').toLowerCase().includes(query));
+                const matchesStatus = statusFilter === 'all' || normalizeStatus(booking.status) === statusFilter;
+                return matchesQuery && matchesStatus;
+            }).sort((left, right) => String(left.checkIn).localeCompare(String(right.checkIn)));
+
+            byId('total-count').textContent = monthBookings.length;
+            byId('pending-count').textContent = monthBookings.filter(item => normalizeStatus(item.status) === 'booking').length;
+            byId('confirmed-count').textContent = monthBookings.filter(item => normalizeStatus(item.status) === 'confirmed').length;
+            byId('loading-state').classList.add('hidden');
+            byId('booking-table-wrap').classList.toggle('hidden', filtered.length === 0);
+            byId('empty-state').classList.toggle('hidden', filtered.length !== 0);
+            renderCalendar();
+
+            const tbody = byId('booking-rows');
+            tbody.replaceChildren();
+            filtered.forEach(booking => {
+                const row = document.createElement('tr');
+                row.className = 'align-top hover:bg-slate-50';
+                const guestCell = document.createElement('td');
+                guestCell.className = 'px-4 py-3';
+                appendText(guestCell, booking.id, 'block whitespace-nowrap font-semibold text-teal-800');
+                appendText(guestCell, booking.name, 'block font-medium text-slate-900');
+                appendText(guestCell, booking.phone, 'mt-1 block text-xs text-slate-500');
+                row.appendChild(guestCell);
+                addCell(row, `${booking.checkIn} — ${booking.checkOut}`);
+                const stayCell = document.createElement('td');
+                stayCell.className = 'px-4 py-3 text-slate-700';
+                appendText(stayCell, `${booking.nights} คืน`, 'block whitespace-nowrap');
+                appendText(stayCell, booking.people || '—', 'mt-1 block text-xs text-slate-500');
+                row.appendChild(stayCell);
+                addCell(row, formatPrice(booking.totalPrice), 'whitespace-nowrap');
+                const statusCell = document.createElement('td');
+                statusCell.className = 'px-4 py-3';
+                const badge = document.createElement('span');
+                badge.className = statusClass(booking.status);
+                badge.textContent = statusLabel(booking.status);
+                statusCell.appendChild(badge);
+                row.appendChild(statusCell);
+                addCell(row, booking.comment || '—', 'max-w-xs whitespace-pre-wrap break-words text-slate-600');
+                addCell(row, booking.createdAt || '—', 'whitespace-nowrap text-xs text-slate-500');
+                const actionCell = document.createElement('td');
+                actionCell.className = 'px-4 py-3';
+                const editButton = document.createElement('button');
+                editButton.type = 'button';
+                editButton.className = 'rounded-lg border border-teal-700 px-3 py-1.5 text-xs font-semibold text-teal-800 hover:bg-teal-50';
+                editButton.textContent = 'แก้ไข';
+                editButton.addEventListener('click', () => openEditDialog(booking));
+                actionCell.appendChild(editButton);
+                row.appendChild(actionCell);
+                tbody.appendChild(row);
+            });
+        }
+
+        function addCell(row, value, className = '') {
+            const cell = document.createElement('td');
+            cell.className = `px-4 py-3 text-slate-700 ${className}`;
+            cell.textContent = value == null || value === '' ? '—' : String(value);
+            row.appendChild(cell);
+        }
+
+        function appendText(parent, value, className) {
+            const element = document.createElement('span');
+            element.className = className;
+            element.textContent = value || '—';
+            parent.appendChild(element);
+        }
+
+        function normalizeStatus(status) {
+            const value = String(status || '').trim().toLowerCase();
+            return ['cancelled', 'canceled'].includes(value) ? 'cancel' : value;
+        }
+
+        function statusLabel(status) {
+            return { booking: 'รอยืนยัน', confirmed: 'ยืนยันแล้ว', cancel: 'ยกเลิก' }[normalizeStatus(status)] || status;
+        }
+
+        function statusClass(status) {
+            const normalized = normalizeStatus(status);
+            const colors = {
+                booking: 'bg-amber-100 text-amber-800',
+                confirmed: 'bg-rose-100 text-rose-800',
+                cancel: 'bg-slate-100 text-slate-600'
+            };
+            return `inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${colors[normalized] || 'bg-slate-100 text-slate-700'}`;
+        }
+
+        function formatPrice(value) {
+            return `฿${(Number(value) || 0).toLocaleString('th-TH')}`;
+        }
+
+        function openEditDialog(booking) {
+            byId('edit-id').value = booking.id;
+            byId('edit-title').textContent = `รหัส ${booking.id}`;
+            byId('edit-name').value = booking.name || '';
+            byId('edit-phone').value = booking.phone || '';
+            byId('edit-checkin').value = booking.checkIn || '';
+            byId('edit-checkout').value = booking.checkOut || '';
+            byId('edit-nights').value = booking.nights || 0;
+            byId('edit-people').value = booking.people || '';
+            byId('edit-status').value = normalizeStatus(booking.status);
+            byId('edit-price').value = Number(booking.totalPrice) || 0;
+            byId('edit-comment').value = booking.comment || '';
+            byId('created-at').textContent = `สร้างรายการเมื่อ: ${booking.createdAt || 'ไม่ระบุ'}`;
+            byId('edit-error').classList.add('hidden');
+            byId('edit-dialog').showModal();
+        }
+
+        function updateNightCount() {
+            const checkIn = byId('edit-checkin').value;
+            const checkOut = byId('edit-checkout').value;
+            const nights = checkIn && checkOut
+                ? (Date.parse(`${checkOut}T00:00:00Z`) - Date.parse(`${checkIn}T00:00:00Z`)) / 86400000
+                : 0;
+            byId('edit-nights').value = Number.isInteger(nights) && nights > 0 ? nights : 'ตรวจสอบวันที่';
+        }
+
+        async function saveBooking(event) {
+            event.preventDefault();
+            const button = byId('save-edit');
+            button.disabled = true;
+            button.textContent = 'กำลังบันทึก...';
+            byId('edit-error').classList.add('hidden');
+            const booking = {
+                id: byId('edit-id').value,
+                name: byId('edit-name').value.trim(),
+                phone: byId('edit-phone').value.trim(),
+                checkIn: byId('edit-checkin').value,
+                checkOut: byId('edit-checkout').value,
+                people: byId('edit-people').value.trim(),
+                status: byId('edit-status').value,
+                totalPrice: byId('edit-price').value,
+                comment: byId('edit-comment').value
+            };
+            try {
+                const result = await sendAdminRequest('update', { booking });
+                if (!result || result.status !== 'success') {
+                    throw new Error(result && result.message ? result.message : 'บันทึกการแก้ไขไม่สำเร็จ');
+                }
+                byId('edit-dialog').close();
+                showNotice('บันทึกการแก้ไขแล้ว', 'success');
+                await loadBookings();
+            } catch (error) {
+                byId('edit-error').textContent = error.message;
+                byId('edit-error').classList.remove('hidden');
+                if (/เซสชัน|บัญชีถูกปิด/.test(error.message)) signOut(error.message);
+            } finally {
+                button.disabled = false;
+                button.textContent = 'บันทึกการแก้ไข';
+            }
+        }
+
+        function showPanel(panel) {
+            const panels = {
+                bookings: byId('bookings-panel'),
+                users: byId('users-panel'),
+                password: byId('password-panel')
+            };
+            Object.entries(panels).forEach(([name, element]) => element.classList.toggle('hidden', name !== panel));
+            ['bookings', 'users', 'password'].forEach(name => {
+                const button = byId(`${name}-tab`);
+                const active = name === panel;
+                button.classList.toggle('bg-teal-700', active);
+                button.classList.toggle('text-white', active);
+                button.classList.toggle('border', !active);
+                button.classList.toggle('border-slate-300', !active);
+                button.classList.toggle('bg-white', !active);
+                button.classList.toggle('text-slate-700', !active);
+            });
+            if (panel === 'users') loadUsers();
+        }
+
+        async function loadUsers() {
+            byId('users-error').classList.add('hidden');
+            try {
+                const result = await sendAdminRequest('listUsers');
+                if (!result || result.status !== 'success' || !Array.isArray(result.data)) {
+                    throw new Error(result && result.message ? result.message : 'โหลดบัญชีแอดมินไม่สำเร็จ');
+                }
+                adminUsers = result.data;
+                renderUsers();
+            } catch (error) {
+                byId('users-error').textContent = error.message;
+                byId('users-error').classList.remove('hidden');
+            }
+        }
+
+        function renderUsers() {
+            const tbody = byId('user-rows');
+            tbody.replaceChildren();
+            adminUsers.forEach(user => {
+                const row = document.createElement('tr');
+                row.className = 'align-middle';
+                addCell(row, user.username, 'font-semibold');
+                addCell(row, user.role === 'superadmin' ? 'Superadmin' : 'Admin');
+                const statusCell = document.createElement('td');
+                statusCell.className = 'px-3 py-3';
+                const status = document.createElement('span');
+                status.className = user.active
+                    ? 'rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-800'
+                    : 'rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600';
+                status.textContent = user.active ? 'ใช้งาน' : 'ปิดใช้งาน';
+                statusCell.appendChild(status);
+                row.appendChild(statusCell);
+                addCell(row, user.createdAt || '—', 'text-xs text-slate-500');
+                const actionCell = document.createElement('td');
+                actionCell.className = 'px-3 py-3';
+                const editButton = document.createElement('button');
+                editButton.type = 'button';
+                editButton.className = 'rounded-lg border border-teal-700 px-3 py-1.5 text-xs font-semibold text-teal-800 hover:bg-teal-50';
+                editButton.textContent = 'แก้ไข';
+                editButton.addEventListener('click', () => openUserDialog(user));
+                actionCell.appendChild(editButton);
+                row.appendChild(actionCell);
+                tbody.appendChild(row);
+            });
+        }
+
+        function openUserDialog(user) {
+            byId('original-username').value = user.username;
+            byId('edit-user-title').textContent = `บัญชี ${user.username}`;
+            byId('edit-username').value = user.username;
+            byId('edit-user-password').value = '';
+            byId('edit-user-active').checked = user.active;
+            const isSuperAdmin = user.username === 'robojorj';
+            byId('edit-username').disabled = isSuperAdmin;
+            byId('edit-user-active').disabled = isSuperAdmin;
+            byId('edit-user-error').classList.add('hidden');
+            byId('user-dialog').showModal();
+        }
+
+        async function createUser(event) {
+            event.preventDefault();
+            const button = byId('create-user-button');
+            button.disabled = true;
+            button.textContent = 'กำลังเพิ่ม...';
+            byId('users-error').classList.add('hidden');
+            try {
+                const result = await sendAdminRequest('createUser', {
+                    username: byId('new-username').value.trim(),
+                    password: byId('new-password').value
+                });
+                if (!result || result.status !== 'success') {
+                    throw new Error(result && result.message ? result.message : 'เพิ่มบัญชีไม่สำเร็จ');
+                }
+                byId('create-user-form').reset();
+                showNotice('เพิ่มบัญชีแอดมินแล้ว', 'success');
+                await loadUsers();
+            } catch (error) {
+                byId('users-error').textContent = error.message;
+                byId('users-error').classList.remove('hidden');
+            } finally {
+                button.disabled = false;
+                button.textContent = 'เพิ่มแอดมิน';
+            }
+        }
+
+        async function saveUser(event) {
+            event.preventDefault();
+            const button = byId('save-user-edit');
+            button.disabled = true;
+            button.textContent = 'กำลังบันทึก...';
+            byId('edit-user-error').classList.add('hidden');
+            const originalUsername = byId('original-username').value;
+            try {
+                const result = await sendAdminRequest('updateUser', {
+                    username: originalUsername,
+                    newUsername: byId('edit-username').value.trim(),
+                    newPassword: byId('edit-user-password').value,
+                    active: byId('edit-user-active').checked
+                });
+                if (!result || result.status !== 'success') {
+                    throw new Error(result && result.message ? result.message : 'แก้ไขบัญชีไม่สำเร็จ');
+                }
+                byId('user-dialog').close();
+                showNotice('บันทึกบัญชีแอดมินแล้ว', 'success');
+                if (originalUsername === currentUsername) {
+                    signOut('ข้อมูลบัญชีเปลี่ยนแล้ว กรุณาเข้าสู่ระบบใหม่');
+                    return;
+                }
+                await loadUsers();
+            } catch (error) {
+                byId('edit-user-error').textContent = error.message;
+                byId('edit-user-error').classList.remove('hidden');
+            } finally {
+                button.disabled = false;
+                button.textContent = 'บันทึก';
+            }
+        }
+
+        async function changeOwnPassword(event) {
+            event.preventDefault();
+            const button = byId('change-password-button');
+            button.disabled = true;
+            button.textContent = 'กำลังเปลี่ยน...';
+            byId('password-error').classList.add('hidden');
+            try {
+                const result = await sendAdminRequest('changeOwnPassword', {
+                    currentPassword: byId('current-password').value,
+                    newPassword: byId('own-new-password').value
+                });
+                if (!result || result.status !== 'success') {
+                    throw new Error(result && result.message ? result.message : 'เปลี่ยนรหัสผ่านไม่สำเร็จ');
+                }
+                byId('change-password-form').reset();
+                signOut('เปลี่ยนรหัสผ่านแล้ว กรุณาเข้าสู่ระบบด้วยรหัสผ่านใหม่');
+            } catch (error) {
+                byId('password-error').textContent = error.message;
+                byId('password-error').classList.remove('hidden');
+            } finally {
+                button.disabled = false;
+                button.textContent = 'บันทึกรหัสผ่านใหม่';
+            }
+        }
+
+        function signOut(message = '') {
+            adminSessionToken = '';
+            currentUsername = '';
+            currentRole = '';
+            bookings = [];
+            byId('admin-panel').classList.add('hidden');
+            byId('account-actions').classList.add('hidden');
+            byId('account-actions').classList.remove('flex');
+            byId('login-panel').classList.remove('hidden');
+            if (message) showLoginError(message);
+        }
+
+        function showLoginError(message) {
+            byId('login-error').textContent = message;
+            byId('login-error').classList.remove('hidden');
+        }
+
+        function showNotice(message, type) {
+            const notice = byId('notice');
+            notice.textContent = message;
+            notice.className = `fixed bottom-5 right-5 z-40 max-w-sm rounded-xl px-4 py-3 text-sm text-white shadow-lg ${type === 'error' ? 'bg-rose-700' : 'bg-slate-900'}`;
+            notice.classList.remove('hidden');
+            setTimeout(() => notice.classList.add('hidden'), 5000);
+        }
+
+        byId('login-form').addEventListener('submit', loginAdmin);
+        byId('search-input').addEventListener('input', renderBookings);
+        byId('status-filter').addEventListener('change', renderBookings);
+        byId('calendar-previous').addEventListener('click', () => changeCalendarMonth(-1));
+        byId('calendar-current').addEventListener('click', showCurrentCalendarMonth);
+        byId('calendar-next').addEventListener('click', () => changeCalendarMonth(1));
+        byId('refresh-button').addEventListener('click', loadBookings);
+        byId('signout-button').addEventListener('click', () => signOut());
+        byId('bookings-tab').addEventListener('click', () => showPanel('bookings'));
+        byId('users-tab').addEventListener('click', () => showPanel('users'));
+        byId('password-tab').addEventListener('click', () => showPanel('password'));
+        byId('edit-form').addEventListener('submit', saveBooking);
+        byId('edit-checkin').addEventListener('change', updateNightCount);
+        byId('edit-checkout').addEventListener('change', updateNightCount);
+        byId('close-dialog').addEventListener('click', () => byId('edit-dialog').close());
+        byId('cancel-edit').addEventListener('click', () => byId('edit-dialog').close());
+        byId('create-user-form').addEventListener('submit', createUser);
+        byId('edit-user-form').addEventListener('submit', saveUser);
+        byId('cancel-user-edit').addEventListener('click', () => byId('user-dialog').close());
+        byId('change-password-form').addEventListener('submit', changeOwnPassword);
+    </script>
+</body>
+</html>

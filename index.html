@@ -402,6 +402,7 @@
                     <i class="fa-brands fa-facebook"></i> ติดตามหรือสอบถามทาง Facebook Page
                 </a>
             </div>
+            <p><a href="admin.html" class="text-slate-400 underline underline-offset-2 hover:text-white">เข้าสู่ระบบผู้ดูแล</a></p>
             <p class="text-slate-600">© 2026 บ้านชายหาด ระยอง. All Rights Reserved.</p>
         </div>
     </footer>
@@ -475,7 +476,7 @@
     </div>
 
     <script>
-        const GOOGLE_SHEET_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbzdkzWe1A2i4rr5tIFxgD9KZap4kti0gxthx1NmtqHeGUf8rdrvH_M9HAqYQiNjzsc6Kw/exec";
+        const GOOGLE_SHEET_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwc3TfRwnd3jJRlfa3wWT-6OltZlw4zRJyDYIYCECa3HR9RCNweAYnvWw4paKvWcO-jpw/exec";
 
         let bookings = [];
         let viewYear = new Date().getFullYear();
@@ -631,7 +632,9 @@
 
         function submitBookingToSheets(booking) {
             return new Promise((resolve, reject) => {
-                const nonce = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+                const nonceBytes = new Uint32Array(4);
+                window.crypto.getRandomValues(nonceBytes);
+                const nonce = Array.from(nonceBytes, value => value.toString(36)).join('-');
                 const frame = document.createElement('iframe');
                 const form = document.createElement('form');
                 const frameName = `bshBooking_${nonce.replace(/[^a-zA-Z0-9]/g, '')}`;
@@ -664,7 +667,8 @@
 
                 function handleResponse(event) {
                     const message = event.data;
-                    if (!message || message.type !== 'bsh-booking-result' || message.nonce !== nonce) return;
+                    if (!message ||
+                        message.type !== 'bsh-booking-result' || message.nonce !== nonce) return;
 
                     cleanup();
                     resolve(message.result);
