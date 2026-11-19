@@ -95,6 +95,11 @@
                         <button id="calendar-next" type="button" aria-label="เดือนถัดไป" class="rounded-lg border border-slate-300 px-3 py-2 text-sm hover:bg-slate-50">›</button>
                     </div>
                 </div>
+                <div class="mt-3 grid grid-cols-7 border-b border-slate-100 py-2 text-center text-xs font-semibold text-slate-500">
+                    <span class="text-rose-600">อา.</span><span>จ.</span><span>อ.</span><span>พ.</span>
+                    <span>พฤ.</span><span>ศ.</span><span class="text-teal-700">ส.</span>
+                </div>
+                <div id="calendar-days-grid" class="grid grid-cols-7 gap-1.5 pt-3 sm:gap-2"></div>
                 <div class="mt-4 flex flex-wrap gap-x-4 gap-y-2 border-t border-slate-100 pt-4 text-xs text-slate-600">
                     <span class="inline-flex items-center gap-2"><span class="h-3 w-3 rounded bg-white border border-slate-300"></span>ว่าง</span>
                     <span class="inline-flex items-center gap-2"><span class="h-3 w-3 rounded bg-amber-100 border border-amber-300"></span>รอยืนยัน</span>
@@ -104,11 +109,6 @@
                     <span class="inline-flex items-center gap-1"><span class="font-semibold text-slate-500">฿6,900</span> จันทร์-พฤหัสฯ / คืน</span>
                     <span class="inline-flex items-center gap-1"><span class="font-semibold text-amber-600">฿8,900</span> ศุกร์-อาทิตย์ / คืน</span>
                 </div>
-                <div class="mt-3 grid grid-cols-7 border-b border-slate-100 py-2 text-center text-xs font-semibold text-slate-500">
-                    <span class="text-rose-600">อา.</span><span>จ.</span><span>อ.</span><span>พ.</span>
-                    <span>พฤ.</span><span>ศ.</span><span class="text-teal-700">ส.</span>
-                </div>
-                <div id="calendar-days-grid" class="grid grid-cols-7 gap-1.5 pt-3 sm:gap-2"></div>
                 <div id="calendar-day-bookings" class="hidden mt-4 rounded-xl border border-teal-100 bg-teal-50 p-4">
                     <h3 id="calendar-day-title" class="text-sm font-semibold text-slate-800"></h3>
                     <div id="calendar-day-booking-list" class="mt-2 flex flex-wrap gap-2"></div>
@@ -128,6 +128,7 @@
                             <option value="booking">รอยืนยัน</option>
                             <option value="confirmed">ยืนยันแล้ว</option>
                             <option value="complete">เข้าพักแล้ว</option>
+                            <option value="close-ปิดบ้าน">Close-ปิดบ้าน</option>
                             <option value="cancel">ยกเลิก</option>
                         </select>
                         <button id="new-booking-button" type="button" class="whitespace-nowrap rounded-lg bg-teal-700 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-800">+ เพิ่มการจอง</button>
@@ -245,6 +246,7 @@
                         <option value="booking">booking — รอยืนยัน</option>
                         <option value="confirmed">confirmed — ยืนยันแล้ว</option>
                         <option value="complete">complete — เข้าพักแล้ว</option>
+                        <option value="close-ปิดบ้าน">Close-ปิดบ้าน</option>
                         <option value="cancel">cancel — ยกเลิก/เปิดวันว่าง</option>
                     </select>
                 </label>
@@ -277,14 +279,11 @@
                 <button id="close-create-booking" type="button" class="rounded-lg px-3 py-1 text-2xl leading-none text-slate-500 hover:bg-slate-100" aria-label="ปิด">&times;</button>
             </div>
             <div class="grid gap-4 sm:grid-cols-2">
-                <label class="text-sm font-medium">ชื่อผู้จอง
-                    <input id="create-name" required maxlength="200" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2">
-                </label>
-                <label class="text-sm font-medium">เบอร์โทรศัพท์
-                    <input id="create-phone" required maxlength="50" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2">
-                </label>
-                <label class="text-sm font-medium sm:col-span-2">อีเมล
-                    <input id="create-email" type="email" required maxlength="254" autocomplete="email" placeholder="name@example.com" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2">
+                <label class="text-sm font-medium sm:col-span-2">สถานะ
+                    <select id="create-status" required class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2">
+                        <option value="booking">booking — รอยืนยัน</option>
+                        <option value="close-ปิดบ้าน">Close-ปิดบ้าน (ปิดวันไม่ให้จอง)</option>
+                    </select>
                 </label>
                 <label class="text-sm font-medium">วันเข้าพัก
                     <input id="create-checkin" type="date" required class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2">
@@ -295,13 +294,24 @@
                 <label class="text-sm font-medium">จำนวนคืน
                     <input id="create-nights" readonly class="mt-1 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-slate-600">
                 </label>
-                <label class="text-sm font-medium">จำนวนผู้เข้าพัก
-                    <select id="create-people" required class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2">
-                        <option value="6-8 ท่าน">6 - 8 ท่าน</option>
-                        <option value="9-11 ท่าน">9 - 11 ท่าน</option>
-                        <option value="12-14 ท่าน" selected>12 - 14 ท่าน (ตามมาตรฐานบ้านพัก)</option>
-                    </select>
-                </label>
+                <div id="create-guest-details" class="col-span-2 grid gap-4 sm:grid-cols-2">
+                    <label class="text-sm font-medium">ชื่อผู้จอง
+                        <input id="create-name" required maxlength="200" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2">
+                    </label>
+                    <label class="text-sm font-medium">เบอร์โทรศัพท์
+                        <input id="create-phone" required maxlength="50" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2">
+                    </label>
+                    <label class="text-sm font-medium sm:col-span-2">อีเมล
+                        <input id="create-email" type="email" required maxlength="254" autocomplete="email" placeholder="name@example.com" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2">
+                    </label>
+                    <label class="text-sm font-medium">จำนวนผู้เข้าพัก
+                        <select id="create-people" required class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2">
+                            <option value="6-8 ท่าน">6 - 8 ท่าน</option>
+                            <option value="9-11 ท่าน">9 - 11 ท่าน</option>
+                            <option value="12-14 ท่าน" selected>12 - 14 ท่าน (ตามมาตรฐานบ้านพัก)</option>
+                        </select>
+                    </label>
+                </div>
                 <label class="text-sm font-medium sm:col-span-2">ยอดชำระ (บาท)
                     <input id="create-price" readonly required class="mt-1 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-slate-600">
                 </label>
@@ -589,6 +599,7 @@
         }
 
         function getCalendarStatus(dayBookings) {
+            if (dayBookings.some(booking => normalizeStatus(booking.status) === 'close-ปิดบ้าน')) return 'close-ปิดบ้าน';
             if (dayBookings.some(booking => normalizeStatus(booking.status) === 'complete')) return 'complete';
             if (dayBookings.some(booking => normalizeStatus(booking.status) === 'confirmed')) return 'confirmed';
             if (dayBookings.some(booking => normalizeStatus(booking.status) === 'booking')) return 'booking';
@@ -622,7 +633,7 @@
                 const nightlyRate = dayOfWeek === 0 || dayOfWeek === 5 || dayOfWeek === 6
                     ? WEEKEND_RATE
                     : WEEKDAY_RATE;
-                const showNightlyRate = date >= todayDate && !['booking', 'confirmed', 'complete'].includes(status);
+                const showNightlyRate = date >= todayDate && !['booking', 'confirmed', 'complete', 'close-ปิดบ้าน'].includes(status);
                 const button = document.createElement('button');
                 button.type = 'button';
                 button.className = 'min-h-14 rounded-xl border p-1.5 text-left transition-colors hover:ring-2 hover:ring-teal-500 sm:min-h-16 sm:p-2';
@@ -632,6 +643,8 @@
                     button.classList.add('border-rose-300', 'bg-rose-100', 'text-rose-900');
                 } else if (status === 'complete') {
                     button.classList.add('border-emerald-300', 'bg-emerald-100', 'text-emerald-900');
+                } else if (status === 'close-ปิดบ้าน') {
+                    button.classList.add('border-slate-500', 'bg-slate-300', 'text-slate-800');
                 } else if (status === 'cancel') {
                     button.classList.add('border-slate-300', 'bg-slate-100', 'text-slate-600');
                 } else {
@@ -801,7 +814,13 @@
         }
 
         function statusLabel(status) {
-            return { booking: 'รอยืนยัน', confirmed: 'ยืนยันแล้ว', complete: 'เข้าพักแล้ว', cancel: 'ยกเลิก' }[normalizeStatus(status)] || status;
+            return {
+                booking: 'รอยืนยัน',
+                confirmed: 'ยืนยันแล้ว',
+                complete: 'เข้าพักแล้ว',
+                'close-ปิดบ้าน': 'Close-ปิดบ้าน',
+                cancel: 'ยกเลิก'
+            }[normalizeStatus(status)] || status;
         }
 
         function statusClass(status) {
@@ -810,6 +829,7 @@
                 booking: 'bg-amber-100 text-amber-800',
                 confirmed: 'bg-rose-100 text-rose-800',
                 complete: 'bg-emerald-100 text-emerald-800',
+                'close-ปิดบ้าน': 'bg-rose-100 text-rose-800',
                 cancel: 'bg-slate-100 text-slate-600'
             };
             return `inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${colors[normalized] || 'bg-slate-100 text-slate-700'}`;
@@ -846,7 +866,9 @@
             byId('edit-nights').value = booking.nights || 0;
             byId('edit-people').value = booking.people || '';
             byId('edit-status').value = normalizeStatus(booking.status);
+            byId('edit-status').dataset.originalStatus = normalizeStatus(booking.status);
             byId('edit-price').value = Number(booking.totalPrice) || 0;
+            updateEditStatusFields();
             byId('edit-comment').value = booking.comment || '';
             byId('edit-admin-remark').value = booking.adminRemark || '';
             byId('send-confirmation-button').classList.toggle('hidden', normalizeStatus(booking.status) !== 'confirmed');
@@ -856,6 +878,17 @@
             byId('created-by').textContent = `บันทึกโดย: ${booking.bookBy || 'website'}`;
             byId('edit-error').classList.add('hidden');
             byId('edit-dialog').showModal();
+        }
+
+        function updateEditStatusFields() {
+            const status = normalizeStatus(byId('edit-status').value);
+            const isHouseClosed = status === 'close-ปิดบ้าน';
+            const isReopeningHouse = byId('edit-status').dataset.originalStatus === 'close-ปิดบ้าน' && status === 'cancel';
+            const requireGuestDetails = !isHouseClosed && !isReopeningHouse;
+            byId('edit-name').required = requireGuestDetails;
+            byId('edit-phone').required = requireGuestDetails;
+            byId('edit-email').disabled = isHouseClosed || isReopeningHouse;
+            if (isHouseClosed) byId('edit-price').value = 0;
         }
 
         function updateNightCount() {
@@ -870,12 +903,25 @@
         function openCreateBookingDialog(checkIn = '') {
             byId('create-booking-form').reset();
             byId('create-email').setCustomValidity('');
+            updateCreateBookingMode();
             byId('create-checkin').value = checkIn;
             byId('create-checkout').value = checkIn ? addCalendarDays(checkIn, 1) : '';
             byId('create-checkout').min = checkIn;
             byId('create-booking-error').classList.add('hidden');
             updateCreateBookingSummary();
             byId('create-booking-dialog').showModal();
+        }
+
+        function updateCreateBookingMode() {
+            const isHouseClosed = normalizeStatus(byId('create-status').value) === 'close-ปิดบ้าน';
+            byId('create-guest-details').classList.toggle('hidden', isHouseClosed);
+            ['create-name', 'create-phone', 'create-email', 'create-people'].forEach(id => {
+                byId(id).required = !isHouseClosed;
+                byId(id).disabled = isHouseClosed;
+            });
+            byId('create-email').setCustomValidity('');
+            byId('save-create-booking').textContent = isHouseClosed ? 'ปิดบ้านตามวันที่' : 'บันทึกการจอง';
+            byId('create-price').value = isHouseClosed ? 0 : '';
         }
 
         function addCalendarDays(date, days) {
@@ -911,6 +957,7 @@
             byId('create-price').value = '';
             const error = byId('create-booking-error');
             const submitButton = byId('save-create-booking');
+            const isHouseClosed = normalizeStatus(byId('create-status').value) === 'close-ปิดบ้าน';
 
             if (!isValidStay) {
                 error.textContent = checkIn && checkOut ? 'วันเช็คเอาท์ต้องอยู่หลังวันเข้าพัก' : '';
@@ -920,12 +967,14 @@
             }
 
             let total = 0;
-            const day = new Date(start);
-            const lastDay = new Date(end);
-            while (day < lastDay) {
-                const weekday = day.getUTCDay();
-                total += weekday === 0 || weekday === 5 || weekday === 6 ? WEEKEND_RATE : WEEKDAY_RATE;
-                day.setUTCDate(day.getUTCDate() + 1);
+            if (!isHouseClosed) {
+                const day = new Date(start);
+                const lastDay = new Date(end);
+                while (day < lastDay) {
+                    const weekday = day.getUTCDay();
+                    total += weekday === 0 || weekday === 5 || weekday === 6 ? WEEKEND_RATE : WEEKDAY_RATE;
+                    day.setUTCDate(day.getUTCDate() + 1);
+                }
             }
             byId('create-price').value = total;
 
@@ -940,27 +989,30 @@
 
         async function createBooking(event) {
             event.preventDefault();
-            const email = byId('create-email').value.trim();
-            if (!isValidEmailAddress(email)) {
+            const status = normalizeStatus(byId('create-status').value);
+            const isHouseClosed = status === 'close-ปิดบ้าน';
+            const email = isHouseClosed ? '' : byId('create-email').value.trim();
+            if (!isHouseClosed && !isValidEmailAddress(email)) {
                 byId('create-email').setCustomValidity('กรุณากรอกอีเมลให้ถูกต้อง');
                 byId('create-email').reportValidity();
                 return;
             }
-            byId('create-email').setCustomValidity('');
+            if (!isHouseClosed) byId('create-email').setCustomValidity('');
 
             const button = byId('save-create-booking');
             button.disabled = true;
             button.textContent = 'กำลังบันทึก...';
             byId('create-booking-error').classList.add('hidden');
             const booking = {
-                name: byId('create-name').value.trim(),
-                phone: byId('create-phone').value.trim(),
+                name: isHouseClosed ? '' : byId('create-name').value.trim(),
+                phone: isHouseClosed ? '' : byId('create-phone').value.trim(),
                 email,
                 checkIn: byId('create-checkin').value,
                 checkOut: byId('create-checkout').value,
-                guests: byId('create-people').value,
+                guests: isHouseClosed ? '' : byId('create-people').value,
                 notes: byId('create-comment').value.trim(),
-                totalPrice: Number(byId('create-price').value)
+                totalPrice: Number(byId('create-price').value),
+                status
             };
             try {
                 const result = await sendAdminRequest('createBooking', { booking });
@@ -973,7 +1025,9 @@
                 calendarMonth = month - 1;
                 selectedCalendarDate = '';
                 byId('create-booking-dialog').close();
-                if (result.adminNotificationStatus === 'failed') {
+                if (isHouseClosed) {
+                    showNotice(`ปิดบ้านตามวันที่แล้ว (${booking.checkIn} — ${booking.checkOut})`, 'success');
+                } else if (result.adminNotificationStatus === 'failed') {
                     showNotice(result.adminNotificationMessage || 'บันทึกการจองแล้ว แต่แจ้งเตือนผู้ดูแลทางอีเมลไม่สำเร็จ', 'error');
                 } else {
                     showNotice(`บันทึกการจอง ${result.data.id} แล้ว และส่งอีเมลแจ้งผู้ดูแลแล้ว`, 'success');
@@ -1332,10 +1386,15 @@
         byId('resend-customer-cancellation-email').addEventListener('click', resendCustomerCancellationEmail);
         byId('edit-checkin').addEventListener('change', updateNightCount);
         byId('edit-checkout').addEventListener('change', updateNightCount);
+        byId('edit-status').addEventListener('change', updateEditStatusFields);
         byId('close-dialog').addEventListener('click', () => byId('edit-dialog').close());
         byId('cancel-edit').addEventListener('click', () => byId('edit-dialog').close());
         byId('new-booking-button').addEventListener('click', () => openCreateBookingDialog());
         byId('create-booking-form').addEventListener('submit', createBooking);
+        byId('create-status').addEventListener('change', () => {
+            updateCreateBookingMode();
+            updateCreateBookingSummary();
+        });
         byId('create-checkin').addEventListener('change', () => {
             const checkIn = byId('create-checkin').value;
             byId('create-checkout').min = checkIn;

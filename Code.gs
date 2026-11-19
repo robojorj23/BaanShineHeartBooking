@@ -514,7 +514,7 @@ function updateAdminBooking_(booking) {
     }
 
     const bookingId = String(booking.id || '').trim();
-    const name = String(booking.name || '').trim();
+    const providedName = String(booking.name || '').trim();
     const phone = String(booking.phone || '').trim();
     const email = String(booking.email || '').trim();
     const checkIn = String(booking.checkIn || '').trim();
@@ -524,22 +524,28 @@ function updateAdminBooking_(booking) {
     const adminRemark = booking.adminRemark === undefined || booking.adminRemark === null
       ? null
       : String(booking.adminRemark);
-    const status = String(booking.status || '').trim().toLowerCase();
+    const requestedStatus = String(booking.status || '').trim().toLowerCase();
+    const isHouseClosed = isHouseClosedStatus_(requestedStatus);
+    const status = isHouseClosed ? 'close-ปิดบ้าน' : requestedStatus;
+    let name = providedName || (isHouseClosed ? 'ปิดบ้าน' : '');
     const totalPrice = Number(booking.totalPrice);
 
-    if (!bookingId || !name || name.length > 200 || !phone || phone.length > 50 ||
+    if (!bookingId || (!name && !isHouseClosed && status !== 'cancel') || name.length > 200 || phone.length > 50 ||
         people.length > 100 || !isValidIsoDate_(checkIn) ||
         !isValidIsoDate_(checkOut) || checkOut <= checkIn) {
       return { status: 'error', message: 'กรุณาตรวจสอบรหัส ชื่อ เบอร์โทร และช่วงวันที่' };
     }
-    if (['booking', 'confirmed', 'complete', 'cancel'].indexOf(status) < 0) {
-      return { status: 'error', message: 'สถานะต้องเป็น booking, confirmed, complete หรือ cancel' };
+    if (!isHouseClosed && status !== 'cancel' && !phone) {
+      return { status: 'error', message: 'กรุณากรอกเบอร์โทรศัพท์' };
+    }
+    if (['booking', 'confirmed', 'complete', 'cancel'].indexOf(status) < 0 && !isHouseClosed) {
+      return { status: 'error', message: 'สถานะไม่ถูกต้อง' };
     }
     if (!Number.isFinite(totalPrice) || totalPrice < 0 || comment.length > 5000 ||
         (adminRemark !== null && adminRemark.length > 5000)) {
       return { status: 'error', message: 'กรุณาตรวจสอบยอดเงินหรือข้อความเพิ่มเติม' };
     }
-    if (email && !isValidEmail_(email)) {
+    if (email && !isValidEmail_(email) && !isHouseClosed) {
       return { status: 'error', message: 'รูปแบบอีเมลไม่ถูกต้อง' };
     }
     if (status === 'confirmed' && !isValidEmail_(email)) {
@@ -561,8 +567,14 @@ function updateAdminBooking_(booking) {
     }
     if (targetRowIndex < 0) return { status: 'error', message: 'ไม่พบรายการจองนี้ อาจถูกลบไปแล้ว' };
     const previousStatus = getRowStatus_(rows[targetRowIndex], sheetInfo.columns.statuses).toLowerCase();
+    const isReopeningHouse = status === 'cancel' && isHouseClosedStatus_(previousStatus);
+    if (isReopeningHouse && !name) name = 'ปิดบ้าน';
+    if (!name || (!isHouseClosed && !isReopeningHouse && !phone)) {
+      return { status: 'error', message: 'กรุณาตรวจสอบชื่อและเบอร์โทรศัพท์' };
+    }
     shouldSendConfirmation = status === 'confirmed' && previousStatus !== 'confirmed';
-    shouldSendCancellationNotification = status === 'cancel' && !isCancelledStatus_(previousStatus);
+    shouldSendCancellationNotification = status === 'cancel' &&
+      !isCancelledStatus_(previousStatus) && !isHouseClosedStatus_(previousStatus);
     shouldSendCustomerCancellationEmail = shouldSendCancellationNotification;
 
     if (!isCancelledStatus_(status)) {
@@ -595,7 +607,7 @@ function updateAdminBooking_(booking) {
     updatedRow[sheetInfo.columns.adminRemark] = adminRemark === null
       ? String(updatedRow[sheetInfo.columns.adminRemark] || '')
       : adminRemark;
-    updatedRow[sheetInfo.columns.totalPrice] = totalPrice;
+    updatedRow[sheetInfo.columns.totalPrice] = isHouseClosed ? 0 : totalPrice;
     updatedRow[sheetInfo.columns.email] = email;
     sheetInfo.columns.statuses.forEach(function(columnIndex) {
       updatedRow[columnIndex] = status;
@@ -754,11 +766,14 @@ function sendBookingConfirmationEmail_(booking) {
   const subject = 'ยืนยันการจองบ้านชายหาด ' + booking.id;
   const body = 'เรียน คุณ' + (booking.name || '') + '\n\n' +
     'ยืนยันการจองบ้านชายหาดเรียบร้อยแล้ว รายละเอียดการจอง:\n' + textDetails +
-    '\n\nติดต่อเจ้าของบ้าน: พี่จอร์จ 080-565-0481';
+    '\n\nกรุณาทักที่เพจเพื่อเอาไว้ติดต่อสื่อสารกัน และระบุหมายเลขการจองมาด้วยนะครับ: https://www.facebook.com/BaanShineHeartRayong' +
+    '\nติดต่อเจ้าของบ้าน: พี่จอร์จ 080-565-0481';
   const htmlBody = '<div style="font-family:Arial,sans-serif;color:#1e293b;line-height:1.6">' +
     '<p>เรียน คุณ' + escapeHtml(booking.name) + '</p>' +
     '<p>ยืนยันการจองบ้านชายหาดเรียบร้อยแล้ว รายละเอียดการจอง:</p>' +
     '<table style="border-collapse:collapse;width:100%;max-width:640px">' + htmlRows + '</table>' +
+    '<p>กรุณาทักที่เพจเพื่อเอาไว้ติดต่อสื่อสารกัน และระบุหมายเลขการจองมาด้วยนะครับ: ' +
+    '<a href="https://www.facebook.com/BaanShineHeartRayong">Facebook บ้านชายหาด</a></p>' +
     '<p>ติดต่อเจ้าของบ้าน: พี่จอร์จ 080-565-0481</p></div>';
 
   MailApp.sendEmail({
@@ -922,10 +937,14 @@ function addMonthsToIsoDate_(dateValue, months) {
 }
 
 function createAdminBooking_(booking, session) {
-  return reserveBooking_(booking, session.username, true, true);
+  const status = String(booking && booking.status || 'booking').trim().toLowerCase();
+  if (status !== 'booking' && !isHouseClosedStatus_(status)) {
+    return { status: 'error', message: 'สร้างรายการได้เฉพาะสถานะรอยืนยันหรือ Close-ปิดบ้าน' };
+  }
+  return reserveBooking_(booking, session.username, true, true, status);
 }
 
-function reserveBooking_(booking, bookBy, skipDuplicateRequest, allowBeyondBookingWindow) {
+function reserveBooking_(booking, bookBy, skipDuplicateRequest, allowBeyondBookingWindow, requestedStatus) {
   const lock = LockService.getScriptLock();
   let bookingResult;
   let notificationBooking;
@@ -937,6 +956,8 @@ function reserveBooking_(booking, bookBy, skipDuplicateRequest, allowBeyondBooki
 
     const checkIn = String(booking.checkIn || '').trim();
     const checkOut = String(booking.checkOut || '').trim();
+    const status = isHouseClosedStatus_(requestedStatus) ? 'close-ปิดบ้าน' : 'booking';
+    const isHouseClosed = isHouseClosedStatus_(status);
     if (!isValidIsoDate_(checkIn) || !isValidIsoDate_(checkOut) || checkOut <= checkIn) {
       return { status: 'error', message: 'กรุณาตรวจสอบวันที่เข้าพัก' };
     }
@@ -954,10 +975,11 @@ function reserveBooking_(booking, bookBy, skipDuplicateRequest, allowBeyondBooki
     const name = String(booking.name || '').trim();
     const phone = String(booking.phone || '').trim();
     const email = String(booking.email || '').trim();
-    if (!name || !phone || !email) {
+    if (!isHouseClosed && (!name || !phone || !email)) {
       return { status: 'error', message: 'กรุณากรอกชื่อ เบอร์โทรศัพท์ และอีเมล' };
     }
-    if (name.length > 200 || phone.length > 50 || !isValidEmail_(email)) {
+    if ((!isHouseClosed && name.length > 200) || phone.length > 50 ||
+        (!isHouseClosed && !isValidEmail_(email))) {
       return { status: 'error', message: 'กรุณาตรวจสอบชื่อ เบอร์โทรศัพท์ และรูปแบบอีเมล' };
     }
 
@@ -1001,7 +1023,7 @@ function reserveBooking_(booking, bookBy, skipDuplicateRequest, allowBeyondBooki
     );
     const record = {
       id: bookingId,
-      name: name,
+      name: isHouseClosed ? 'ปิดบ้าน' : name,
       phone: phone,
       checkIn: checkIn,
       checkOut: checkOut,
@@ -1009,10 +1031,10 @@ function reserveBooking_(booking, bookBy, skipDuplicateRequest, allowBeyondBooki
       guests: String(booking.guests || ''),
       email: email,
       bookBy: String(bookBy || 'website'),
-      status: 'booking',
+      status: status,
       comment: String(booking.notes || booking.comment || ''),
       adminRemark: '',
-      totalPrice: Number(booking.totalPrice) || 0,
+      totalPrice: isHouseClosed ? 0 : Number(booking.totalPrice) || 0,
       createdAt: new Date()
     };
 
@@ -1056,14 +1078,16 @@ function reserveBooking_(booking, bookBy, skipDuplicateRequest, allowBeyondBooki
     lock.releaseLock();
   }
 
-  try {
-    sendNewBookingNotificationToAdmins_(notificationBooking);
-    bookingResult.adminNotificationStatus = 'sent';
-  } catch (error) {
-    console.error('ไม่สามารถส่งอีเมลแจ้งเตือนการจองให้ผู้ดูแลได้:', error && error.stack ? error.stack : error);
-    bookingResult.adminNotificationStatus = 'failed';
-    const detail = error && error.message ? String(error.message).slice(0, 300) : 'ไม่ทราบสาเหตุ';
-    bookingResult.adminNotificationMessage = 'บันทึกการจองแล้ว แต่แจ้งเตือนผู้ดูแลทางอีเมลไม่สำเร็จ: ' + detail;
+  if (!isHouseClosedStatus_(notificationBooking.status)) {
+    try {
+      sendNewBookingNotificationToAdmins_(notificationBooking);
+      bookingResult.adminNotificationStatus = 'sent';
+    } catch (error) {
+      console.error('ไม่สามารถส่งอีเมลแจ้งเตือนการจองให้ผู้ดูแลได้:', error && error.stack ? error.stack : error);
+      bookingResult.adminNotificationStatus = 'failed';
+      const detail = error && error.message ? String(error.message).slice(0, 300) : 'ไม่ทราบสาเหตุ';
+      bookingResult.adminNotificationMessage = 'บันทึกการจองแล้ว แต่แจ้งเตือนผู้ดูแลทางอีเมลไม่สำเร็จ: ' + detail;
+    }
   }
   return bookingResult;
 }
@@ -1307,10 +1331,16 @@ function getRowStatus_(row, statusColumns) {
     return String(row[index] || '').trim();
   }).filter(Boolean);
   const cancelled = statuses.find(isCancelledStatus_);
+  const houseClosed = statuses.find(isHouseClosedStatus_);
   const complete = statuses.find(function(status) { return status.toLowerCase() === 'complete'; });
   const confirmed = statuses.find(function(status) { return status.toLowerCase() === 'confirmed'; });
   const booking = statuses.find(function(status) { return status.toLowerCase() === 'booking'; });
-  return cancelled || complete || confirmed || booking || statuses[0] || 'confirmed';
+  return cancelled || houseClosed || complete || confirmed || booking || statuses[0] || 'confirmed';
+}
+
+function isHouseClosedStatus_(status) {
+  const normalized = String(status || '').trim().toLowerCase();
+  return normalized === 'close' || normalized === 'close-ปิดบ้าน';
 }
 
 function isCancelledStatus_(status) {
