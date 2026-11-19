@@ -103,7 +103,6 @@
                 </a>
 
                 <div class="hidden md:flex items-center gap-8 font-medium text-slate-600 text-sm">
-                    <a href="#about" class="hover:text-ocean-700 transition-colors">ไฮไลท์บ้านพัก</a>
                     <a href="#gallery" class="hover:text-ocean-700 transition-colors">รูปภาพ</a>
                     <a href="#booking-section" class="hover:text-ocean-700 transition-colors">เช็คปฏิทิน & จอง</a>
                     <a href="https://www.facebook.com/BaanShineHeartRayong" target="_blank" rel="noopener noreferrer" class="hover:text-blue-600 transition-colors flex items-center gap-1.5 text-blue-600 font-semibold">
@@ -170,57 +169,11 @@
             </div>
         </section>
 
-        <section id="about" class="py-12 bg-white border-b border-slate-100">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="grid grid-cols-2 sm:grid-cols-4 gap-6">
-                    <div class="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100">
-                        <div class="w-12 h-12 rounded-xl bg-ocean-100 text-ocean-700 flex items-center justify-center text-xl shrink-0">
-                            <i class="fa-solid fa-umbrella-beach"></i>
-                        </div>
-                        <div>
-                            <h4 class="font-bold text-slate-800 text-base">ติดทะเล</h4>
-                            <p class="text-xs text-slate-500">แหลมเจริญ หาดแสงจันทร์</p>
-                        </div>
-                    </div>
-
-                    <div class="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100">
-                        <div class="w-12 h-12 rounded-xl bg-ocean-100 text-ocean-700 flex items-center justify-center text-xl shrink-0">
-                            <i class="fa-solid fa-car"></i>
-                        </div>
-                        <div>
-                            <h4 class="font-bold text-slate-800 text-base">จอดรถหน้าบ้านได้ 2 คัน</h4>
-                            <p class="text-xs text-slate-500">พร้อมพื้นที่พักผ่อนปาร์ตี้</p>
-                        </div>
-                    </div>
-
-                    <div class="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100">
-                        <div class="w-12 h-12 rounded-xl bg-ocean-100 text-ocean-700 flex items-center justify-center text-xl shrink-0">
-                            <i class="fa-solid fa-users"></i>
-                        </div>
-                        <div>
-                            <h4 class="font-bold text-slate-800 text-base">เข้าพัก 6-14 ท่าน</h4>
-                            <p class="text-xs text-slate-500">รองรับกลุ่มเพื่อน & ครอบครัว</p>
-                        </div>
-                    </div>
-
-                    <div class="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100">
-                        <div class="w-12 h-12 rounded-xl bg-ocean-100 text-ocean-700 flex items-center justify-center text-xl shrink-0">
-                            <i class="fa-solid fa-tag"></i>
-                        </div>
-                        <div>
-                            <h4 class="font-bold text-slate-800 text-base">ราคาตรง ไม่บวกเพิ่ม</h4>
-                            <p class="text-xs text-slate-500">เทศกาล & วันหยุดนักขัตฤกษ์</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
         <section id="booking-section" class="py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
             <div class="text-center max-w-3xl mx-auto mb-12 space-y-3">
                 <span class="px-3.5 py-1 rounded-full bg-ocean-100 text-ocean-800 text-xs font-semibold tracking-wide uppercase">Real-time Calendar & Booking</span>
                 <h2 class="font-serif text-3xl sm:text-4xl font-extrabold text-slate-900">ตรวจสอบวันว่างและทำการจองบ้านพัก</h2>
-                <p class="text-slate-600 text-sm sm:text-base">เลือกวันที่เข้าพักในปฏิทิน โดยวันที่เลือก 2 วันหมายถึงเข้าพัก 2 คืน ระบบจะคำนวณวันเช็คเอาท์และราคารวมให้อัตโนมัติ</p>
+                <p class="text-slate-600 text-sm sm:text-base">จองล่วงหน้าได้ตั้งแต่วันนี้ถึง 3 เดือนข้างหน้า</p>
             </div>
 
             <div class="grid lg:grid-cols-12 gap-8 items-start">
@@ -228,19 +181,31 @@
                     <div class="flex items-center justify-between">
                         <div>
                             <h3 id="calendar-month-year" class="font-serif font-bold text-xl text-slate-900">กำลังโหลดปฏิทิน...</h3>
-                            <p class="text-xs text-slate-500 mt-0.5">คลิกวันเข้าพักคืนแรก แล้วเลือกวันสุดท้ายที่ต้องการพัก (เลือก 2 วัน = 2 คืน)</p>
                         </div>
                         <div class="flex items-center gap-2">
-                            <button onclick="changeMonth(-1)" class="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition-colors">
+                            <button id="calendar-previous" onclick="changeMonth(-1)" aria-label="เดือนก่อนหน้า" class="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 disabled:opacity-40 disabled:cursor-not-allowed text-slate-700 flex items-center justify-center transition-colors">
                                 <i class="fa-solid fa-chevron-left text-xs"></i>
                             </button>
-                            <button onclick="resetMonthToCurrent()" class="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-colors">
+                            <button id="calendar-current" onclick="resetMonthToCurrent()" class="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 disabled:opacity-40 disabled:cursor-not-allowed text-slate-700 text-xs font-semibold transition-colors">
                                 เดือนนี้
                             </button>
-                            <button onclick="changeMonth(1)" class="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition-colors">
+                            <button id="calendar-next" onclick="changeMonth(1)" aria-label="เดือนถัดไป" class="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 disabled:opacity-40 disabled:cursor-not-allowed text-slate-700 flex items-center justify-center transition-colors">
                                 <i class="fa-solid fa-chevron-right text-xs"></i>
                             </button>
                         </div>
+                    </div>
+
+                    <div>
+                        <div class="grid grid-cols-7 text-center font-bold text-xs text-slate-400 py-2 border-b border-slate-100">
+                            <div class="text-rose-500">อา.</div>
+                            <div>จ.</div>
+                            <div>อ.</div>
+                            <div>พ.</div>
+                            <div>พฤ.</div>
+                            <div>ศ.</div>
+                            <div class="text-ocean-700">ส.</div>
+                        </div>
+                        <div id="calendar-days-grid" class="grid grid-cols-7 gap-1.5 pt-3"></div>
                     </div>
 
                     <div class="flex flex-wrap items-center gap-4 text-xs pt-2 border-t border-slate-100">
@@ -262,22 +227,9 @@
                         </div>
                     </div>
 
-                    <div>
-                        <div class="grid grid-cols-7 text-center font-bold text-xs text-slate-400 py-2 border-b border-slate-100">
-                            <div class="text-rose-500">อา.</div>
-                            <div>จ.</div>
-                            <div>อ.</div>
-                            <div>พ.</div>
-                            <div>พฤ.</div>
-                            <div>ศ.</div>
-                            <div class="text-ocean-700">ส.</div>
-                        </div>
-                        <div id="calendar-days-grid" class="grid grid-cols-7 gap-1.5 pt-3"></div>
-                    </div>
-
                     <div class="p-4 rounded-2xl bg-amber-50 border border-amber-200/60 text-amber-900 text-xs space-y-1">
                         <div class="font-semibold flex items-center gap-2">
-                            <i class="fa-solid fa-circle-info text-amber-600"></i> เงื่อนไขเวลาเข้าพัก
+                            <i class="fa-solid fa-circle-info text-amber-600"></i> เลือกวันที่ต้องการเข้าพักในปฏิทิน
                         </div>
                         <p class="text-amber-800/90 leading-relaxed">
                             เช็คอิน (Check-in) เวลา 14:00 น. เป็นต้นไป | เช็คเอาท์ (Check-out) ไม่เกิน 11:00 น. ของวันถัดไป
@@ -521,6 +473,8 @@
         let bookings = [];
         let viewYear = new Date().getFullYear();
         let viewMonth = new Date().getMonth();
+        let minCheckInDate = formatDateStr(new Date());
+        let maxCheckInDate = addMonthsToDateStr(formatDateStr(new Date()), 3);
 
         let selectedCheckInDate = null;
         let selectedCheckOutDate = null;
@@ -545,8 +499,30 @@
         }
 
         function saveBookings() {
-            const availability = bookings.map(({ checkIn, checkOut, status }) => ({ checkIn, checkOut, status }));
+            const availability = filterBookingsToWindow(bookings)
+                .map(({ checkIn, checkOut, status }) => ({ checkIn, checkOut, status }));
             localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(availability));
+        }
+
+        function addMonthsToDateStr(dateStr, months) {
+            const [year, month, day] = dateStr.split('-').map(Number);
+            const targetMonth = new Date(year, month - 1 + months, 1);
+            const lastDay = new Date(targetMonth.getFullYear(), targetMonth.getMonth() + 1, 0).getDate();
+            return formatDateStr(new Date(targetMonth.getFullYear(), targetMonth.getMonth(), Math.min(day, lastDay)));
+        }
+
+        function getBookingWindowStartDate() {
+            return minCheckInDate;
+        }
+
+        function filterBookingsToWindow(records) {
+            const startDate = getBookingWindowStartDate();
+            return records.filter(record =>
+                record.checkIn <= maxCheckInDate && record.checkOut > startDate);
+        }
+
+        function getMonthIndex(year, month) {
+            return year * 12 + month;
         }
 
         function parseDateSafe(value) {
@@ -630,8 +606,18 @@
                     throw new Error(result && result.message ? result.message : 'Invalid Google Sheets response');
                 }
 
-                bookings = normalizeBookingsPayload(result.data);
+                if (result.bookingWindow && /^\d{4}-\d{2}-\d{2}$/.test(result.bookingWindow.maxCheckIn || '')) {
+                    maxCheckInDate = result.bookingWindow.maxCheckIn;
+                }
+                if (result.bookingWindow && /^\d{4}-\d{2}-\d{2}$/.test(result.bookingWindow.startDate || '')) {
+                    minCheckInDate = result.bookingWindow.startDate;
+                }
+                bookings = filterBookingsToWindow(normalizeBookingsPayload(result.data));
                 saveBookings();
+                const checkInInput = document.getElementById('input-checkin');
+                checkInInput.min = getBookingWindowStartDate();
+                checkInInput.max = maxCheckInDate;
+                clampCalendarMonth();
                 renderCalendar();
             } catch (err) {
                 console.error('ไม่สามารถดึงข้อมูลล่าสุดจาก Google Sheets ได้:', err);
@@ -733,8 +719,9 @@
             renderCalendar();
             loadBookingsFromSheets();
 
-            const todayStr = formatDateStr(new Date());
+            const todayStr = getBookingWindowStartDate();
             document.getElementById('input-checkin').min = todayStr;
+            document.getElementById('input-checkin').max = maxCheckInDate;
 
             window.setInterval(() => {
                 if (!document.hidden) loadBookingsFromSheets();
@@ -801,15 +788,24 @@
         }
 
         function changeMonth(delta) {
-            viewMonth += delta;
-            if (viewMonth < 0) {
-                viewMonth = 11;
-                viewYear--;
-            } else if (viewMonth > 11) {
-                viewMonth = 0;
-                viewYear++;
-            }
+            const today = new Date();
+            const minMonth = getMonthIndex(today.getFullYear(), today.getMonth());
+            const maxDate = parseDateStr(maxCheckInDate);
+            const maxMonth = getMonthIndex(maxDate.getFullYear(), maxDate.getMonth());
+            const nextMonth = Math.max(minMonth, Math.min(maxMonth, getMonthIndex(viewYear, viewMonth) + delta));
+            viewYear = Math.floor(nextMonth / 12);
+            viewMonth = nextMonth % 12;
             renderCalendar();
+        }
+
+        function clampCalendarMonth() {
+            const today = new Date();
+            const minMonth = getMonthIndex(today.getFullYear(), today.getMonth());
+            const maxDate = parseDateStr(maxCheckInDate);
+            const maxMonth = getMonthIndex(maxDate.getFullYear(), maxDate.getMonth());
+            const currentMonth = Math.max(minMonth, Math.min(maxMonth, getMonthIndex(viewYear, viewMonth)));
+            viewYear = Math.floor(currentMonth / 12);
+            viewMonth = currentMonth % 12;
         }
 
         function resetMonthToCurrent() {
@@ -866,8 +862,19 @@
         }
 
         function renderCalendar() {
+            clampCalendarMonth();
             const titleEl = document.getElementById('calendar-month-year');
             titleEl.textContent = `${getThaiMonthName(viewMonth)} ${viewYear + 543}`;
+            const today = new Date();
+            const minMonthIndex = getMonthIndex(today.getFullYear(), today.getMonth());
+            const maxDate = parseDateStr(maxCheckInDate);
+            const maxMonthIndex = getMonthIndex(maxDate.getFullYear(), maxDate.getMonth());
+            const displayedMonthIndex = getMonthIndex(viewYear, viewMonth);
+            document.getElementById('calendar-previous').disabled = displayedMonthIndex <= minMonthIndex;
+            document.getElementById('calendar-next').disabled = displayedMonthIndex >= maxMonthIndex;
+            document.getElementById('calendar-current').disabled = displayedMonthIndex === minMonthIndex;
+            document.getElementById('input-checkin').min = getBookingWindowStartDate();
+            document.getElementById('input-checkin').max = maxCheckInDate;
 
             const grid = document.getElementById('calendar-days-grid');
             grid.innerHTML = '';
@@ -888,6 +895,7 @@
                 const bookingStatus = getBookingStatusForDate(dateStr);
                 const isBooked = bookingStatus !== null;
                 const isPast = dateStr < todayStr;
+                const isOutsideBookingWindow = dateStr > maxCheckInDate;
                 const dayOfWeek = currentDate.getDay();
                 const isWeekendRate = dayOfWeek === 0 || dayOfWeek === 5 || dayOfWeek === 6;
 
@@ -900,7 +908,7 @@
                     baseClass += 'cal-day-booking shadow-inner';
                 } else if (isBooked) {
                     baseClass += 'cal-day-confirmed shadow-inner';
-                } else if (isPast) {
+                } else if (isPast || isOutsideBookingWindow) {
                     baseClass += 'cal-day-disabled border-slate-200';
                 } else {
                     baseClass += 'bg-white hover:border-ocean-500 hover:shadow-md border-slate-200/80 text-slate-800';
@@ -912,8 +920,8 @@
 
                 dayCell.className = baseClass;
 
-                const priceBadge = !isPast && !isBooked ?
-                    `<span class="whitespace-nowrap text-[8px] sm:text-[9px] ${isWeekendRate ? 'text-amber-600 font-bold' : 'text-slate-500'}">฿${(isWeekendRate ? WEEKEND_RATE : WEEKDAY_RATE).toLocaleString('th-TH')}</span>` : '';
+                const priceBadge = !isPast && !isOutsideBookingWindow && !isBooked ?
+                    `<span class="whitespace-nowrap text-[14px] sm:text-[13.5px] ${isWeekendRate ? 'text-amber-600 font-bold' : 'text-slate-500'}">฿${(isWeekendRate ? WEEKEND_RATE : WEEKDAY_RATE).toLocaleString('th-TH')}</span>` : '';
 
                 const statusLabel = bookingStatus === 'booking'
                     ? '<span class="text-[9px] font-bold text-amber-700">รอยืนยัน</span>'
@@ -930,7 +938,7 @@
                     </div>
                 `;
 
-                if (!isPast && !isBooked) {
+                if (!isPast && !isOutsideBookingWindow && !isBooked) {
                     dayCell.onclick = () => handleDateClick(dateStr);
                 } else if (isBooked) {
                     dayCell.onclick = () => showToast('วันที่เลือกมีผู้จองแล้ว กรุณาเลือกวันอื่น', 'error');
@@ -941,6 +949,11 @@
         }
 
         function handleDateClick(dateStr) {
+            if (dateStr < getBookingWindowStartDate() || dateStr > maxCheckInDate) {
+                showToast('สามารถจองได้ตั้งแต่วันนี้ถึง 3 เดือนข้างหน้า', 'error');
+                return;
+            }
+
             if (selectedCheckInDate && selectedCheckOutDate &&
                 dateStr >= selectedCheckInDate && dateStr < selectedCheckOutDate) {
                 const isFirstNight = dateStr === selectedCheckInDate;
@@ -987,6 +1000,15 @@
 
         function onManualDateChange() {
             const cin = document.getElementById('input-checkin').value;
+            if (cin && (cin < getBookingWindowStartDate() || cin > maxCheckInDate)) {
+                showToast('สามารถจองได้ตั้งแต่วันนี้ถึง 3 เดือนข้างหน้า', 'error');
+                document.getElementById('input-checkin').value = '';
+                selectedCheckInDate = null;
+                selectedCheckOutDate = null;
+                renderCalendar();
+                calculateTotalPrice();
+                return;
+            }
             selectedCheckInDate = cin || null;
             selectedCheckOutDate = selectedCheckInDate ? getNextDateStr(selectedCheckInDate) : null;
 
@@ -1061,6 +1083,10 @@
 
             if (!selectedCheckInDate || !selectedCheckOutDate) {
                 showToast('กรุณาเลือกวันเข้าพักให้ครบถ้วน', 'error');
+                return;
+            }
+            if (selectedCheckInDate < getBookingWindowStartDate() || selectedCheckInDate > maxCheckInDate) {
+                showToast('สามารถจองได้ตั้งแต่วันนี้ถึง 3 เดือนข้างหน้า', 'error');
                 return;
             }
 
@@ -1207,7 +1233,11 @@
             renderCalendar();
             calculateTotalPrice();
 
-            showToast('จองสำเร็จ แอดมินจะติดต่อกลับ', 'success');
+            if (bookingResult.adminNotificationStatus === 'failed') {
+                showToast(bookingResult.adminNotificationMessage || 'บันทึกการจองแล้ว แต่แจ้งเตือนผู้ดูแลทางอีเมลไม่สำเร็จ', 'error');
+            } else {
+                showToast('จองสำเร็จ และส่งอีเมลแจ้งผู้ดูแลแล้ว', 'success');
+            }
         }
 
         function closeReceiptModal() {

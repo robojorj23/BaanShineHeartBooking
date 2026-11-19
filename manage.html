@@ -136,16 +136,19 @@
                 <div id="loading-state" class="p-10 text-center text-sm text-slate-500">กำลังโหลดรายการ...</div>
                 <div id="empty-state" class="hidden p-10 text-center text-sm text-slate-500">ไม่พบรายการจอง</div>
                 <div id="booking-table-wrap" class="hidden overflow-x-auto">
-                    <table class="w-full min-w-[1000px] text-left text-sm">
+                    <table class="w-full min-w-[1200px] text-left text-sm">
                         <thead class="bg-slate-50 text-xs uppercase text-slate-500">
                             <tr>
                                 <th class="px-4 py-3">รหัส / ผู้จอง</th>
-                                <th class="px-4 py-3">วันเข้าพัก - เช็คเอาท์</th>
+                                <th class="px-4 py-3">วันเช็คอิน</th>
+                                <th class="px-4 py-3">วันเช็คเอาท์</th>
                                 <th class="px-4 py-3">จำนวนคืน / คน</th>
                                 <th class="px-4 py-3">ยอดชำระ</th>
                                 <th class="px-4 py-3">สถานะ</th>
                                 <th class="px-4 py-3">คำขอเพิ่มเติม</th>
+                                <th class="px-4 py-3">หมายเหตุจากผู้ดูแล</th>
                                 <th class="px-4 py-3">สร้างเมื่อ</th>
+                                <th class="px-4 py-3">บันทึกโดย</th>
                                 <th class="px-4 py-3"></th>
                             </tr>
                         </thead>
@@ -248,11 +251,17 @@
                 <label class="text-sm font-medium sm:col-span-2">คำขอเพิ่มเติม
                     <textarea id="edit-comment" rows="3" maxlength="5000" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"></textarea>
                 </label>
+                <label class="text-sm font-medium sm:col-span-2">หมายเหตุจากผู้ดูแล
+                    <textarea id="edit-admin-remark" rows="3" maxlength="5000" placeholder="ระบุรายละเอียดประกอบการเปลี่ยนสถานะ (ถ้ามี)" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"></textarea>
+                </label>
                 <p id="created-at" class="text-xs text-slate-500 sm:col-span-2"></p>
+                <p id="created-by" class="text-xs text-slate-500 sm:col-span-2"></p>
             </div>
             <div id="edit-error" class="hidden rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800"></div>
             <div class="flex justify-end gap-3 border-t border-slate-100 pt-4">
                 <button id="send-confirmation-button" type="button" class="hidden rounded-lg border border-teal-700 px-4 py-2 text-sm font-semibold text-teal-800 hover:bg-teal-50">ส่งอีเมลยืนยันอีกครั้ง</button>
+                <button id="resend-cancellation-notification" type="button" class="hidden rounded-lg border border-rose-700 px-4 py-2 text-sm font-semibold text-rose-800 hover:bg-rose-50">แจ้งผู้ดูแลเรื่องยกเลิกอีกครั้ง</button>
+                <button id="resend-customer-cancellation-email" type="button" class="hidden rounded-lg border border-amber-700 px-4 py-2 text-sm font-semibold text-amber-800 hover:bg-amber-50">แจ้งลูกค้าเรื่องยกเลิกอีกครั้ง</button>
                 <button id="cancel-edit" type="button" class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold hover:bg-slate-50">ยกเลิก</button>
                 <button id="save-edit" type="submit" class="rounded-lg bg-teal-700 px-5 py-2 text-sm font-semibold text-white hover:bg-teal-800">บันทึกการแก้ไข</button>
             </div>
@@ -739,11 +748,9 @@
                 guestCell.className = 'px-4 py-3';
                 appendText(guestCell, booking.id, 'block whitespace-nowrap font-semibold text-teal-800');
                 appendText(guestCell, booking.name, 'block font-medium text-slate-900');
-                appendText(guestCell, booking.phone, 'mt-1 block text-xs text-slate-500');
-                appendText(guestCell, booking.email, 'mt-1 block break-all text-xs text-slate-500');
-                appendText(guestCell, booking.bookBy ? `บันทึกโดย: ${booking.bookBy}` : 'บันทึกโดย: เว็บไซต์', 'mt-1 block text-[11px] text-slate-400');
                 row.appendChild(guestCell);
-                addCell(row, `${booking.checkIn} — ${booking.checkOut}`);
+                addCell(row, formatBookingDate(booking.checkIn), 'whitespace-nowrap');
+                addCell(row, formatBookingDate(booking.checkOut), 'whitespace-nowrap');
                 const stayCell = document.createElement('td');
                 stayCell.className = 'px-4 py-3 text-slate-700';
                 appendText(stayCell, `${booking.nights} คืน`, 'block whitespace-nowrap');
@@ -758,7 +765,9 @@
                 statusCell.appendChild(badge);
                 row.appendChild(statusCell);
                 addCell(row, booking.comment || '—', 'max-w-xs whitespace-pre-wrap break-words text-slate-600');
+                addCell(row, booking.adminRemark || '—', 'max-w-xs whitespace-pre-wrap break-words text-slate-600');
                 addCell(row, booking.createdAt || '—', 'whitespace-nowrap text-xs text-slate-500');
+                addCell(row, booking.bookBy || 'website', 'whitespace-nowrap');
                 const actionCell = document.createElement('td');
                 actionCell.className = 'px-4 py-3';
                 const editButton = document.createElement('button');
@@ -810,6 +819,22 @@
             return `฿${(Number(value) || 0).toLocaleString('th-TH')}`;
         }
 
+        function formatBookingDate(value) {
+            const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(value || ''));
+            if (!match) return value || '—';
+
+            const year = Number(match[1]);
+            const month = Number(match[2]);
+            const day = Number(match[3]);
+            const date = new Date(Date.UTC(year, month - 1, day));
+            if (date.getUTCFullYear() !== year || date.getUTCMonth() !== month - 1 || date.getUTCDate() !== day) {
+                return value;
+            }
+
+            const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            return `${match[3]} ${monthNames[month - 1]} ${match[1]}`;
+        }
+
         function openEditDialog(booking) {
             byId('edit-id').value = booking.id;
             byId('edit-title').textContent = `รหัส ${booking.id}`;
@@ -823,8 +848,12 @@
             byId('edit-status').value = normalizeStatus(booking.status);
             byId('edit-price').value = Number(booking.totalPrice) || 0;
             byId('edit-comment').value = booking.comment || '';
+            byId('edit-admin-remark').value = booking.adminRemark || '';
             byId('send-confirmation-button').classList.toggle('hidden', normalizeStatus(booking.status) !== 'confirmed');
+            byId('resend-cancellation-notification').classList.toggle('hidden', normalizeStatus(booking.status) !== 'cancel');
+            byId('resend-customer-cancellation-email').classList.toggle('hidden', normalizeStatus(booking.status) !== 'cancel');
             byId('created-at').textContent = `สร้างรายการเมื่อ: ${booking.createdAt || 'ไม่ระบุ'}`;
+            byId('created-by').textContent = `บันทึกโดย: ${booking.bookBy || 'website'}`;
             byId('edit-error').classList.add('hidden');
             byId('edit-dialog').showModal();
         }
@@ -944,7 +973,11 @@
                 calendarMonth = month - 1;
                 selectedCalendarDate = '';
                 byId('create-booking-dialog').close();
-                showNotice(`บันทึกการจอง ${result.data.id} แล้ว`, 'success');
+                if (result.adminNotificationStatus === 'failed') {
+                    showNotice(result.adminNotificationMessage || 'บันทึกการจองแล้ว แต่แจ้งเตือนผู้ดูแลทางอีเมลไม่สำเร็จ', 'error');
+                } else {
+                    showNotice(`บันทึกการจอง ${result.data.id} แล้ว และส่งอีเมลแจ้งผู้ดูแลแล้ว`, 'success');
+                }
                 await loadBookings();
             } catch (error) {
                 byId('create-booking-error').textContent = error.message;
@@ -972,7 +1005,8 @@
                 people: byId('edit-people').value.trim(),
                 status: byId('edit-status').value,
                 totalPrice: byId('edit-price').value,
-                comment: byId('edit-comment').value
+                comment: byId('edit-comment').value,
+                adminRemark: byId('edit-admin-remark').value
             };
             try {
                 const result = await sendAdminRequest('update', { booking });
@@ -987,10 +1021,36 @@
                     await loadBookings();
                     return;
                 }
+                if (result.adminNotificationStatus === 'failed') {
+                    byId('resend-cancellation-notification').classList.remove('hidden');
+                }
+                if (result.customerEmailStatus === 'failed') {
+                    byId('resend-customer-cancellation-email').classList.remove('hidden');
+                }
+                if (result.adminNotificationStatus === 'failed' || result.customerEmailStatus === 'failed') {
+                    const failedMessages = [];
+                    if (result.adminNotificationStatus === 'failed') {
+                        failedMessages.push(result.adminNotificationMessage || 'แจ้งผู้ดูแลทางอีเมลไม่สำเร็จ');
+                    }
+                    if (result.customerEmailStatus === 'failed') {
+                        failedMessages.push(result.customerEmailMessage || 'แจ้งลูกค้าทางอีเมลไม่สำเร็จ');
+                    }
+                    const failureMessage = failedMessages.join(' ');
+                    byId('edit-error').textContent = failureMessage;
+                    byId('edit-error').classList.remove('hidden');
+                    showNotice(failureMessage, 'error');
+                    await loadBookings();
+                    return;
+                }
                 byId('edit-dialog').close();
-                showNotice(result.emailStatus === 'sent'
+                const successMessage = result.emailStatus === 'sent'
                     ? 'ยืนยันการจองและส่งรายละเอียดไปยังอีเมลลูกค้าแล้ว'
-                    : 'บันทึกการแก้ไขแล้ว', 'success');
+                    : result.adminNotificationStatus === 'sent' && result.customerEmailStatus === 'sent'
+                        ? 'ยกเลิกการจองและส่งอีเมลแจ้งผู้ดูแลกับลูกค้าแล้ว'
+                        : result.adminNotificationStatus === 'sent'
+                            ? 'ยกเลิกการจองและส่งอีเมลแจ้งผู้ดูแลแล้ว'
+                        : 'บันทึกการแก้ไขแล้ว';
+                showNotice(successMessage, 'success');
                 await loadBookings();
             } catch (error) {
                 byId('edit-error').textContent = error.message;
@@ -1020,6 +1080,48 @@
             } finally {
                 button.disabled = false;
                 button.textContent = 'ส่งอีเมลยืนยันอีกครั้ง';
+            }
+        }
+
+        async function resendCancellationNotification() {
+            const button = byId('resend-cancellation-notification');
+            button.disabled = true;
+            button.textContent = 'กำลังแจ้งผู้ดูแล...';
+            byId('edit-error').classList.add('hidden');
+            try {
+                const result = await sendAdminRequest('sendCancellationNotification', { id: byId('edit-id').value });
+                if (!result || result.status !== 'success') {
+                    throw new Error(result && result.message ? result.message : 'ส่งอีเมลแจ้งการยกเลิกไม่สำเร็จ');
+                }
+                showNotice('ส่งอีเมลแจ้งการยกเลิกให้ผู้ดูแลแล้ว', 'success');
+            } catch (error) {
+                byId('edit-error').textContent = error.message;
+                byId('edit-error').classList.remove('hidden');
+                if (/เซสชัน|บัญชีถูกปิด/.test(error.message)) signOut(error.message);
+            } finally {
+                button.disabled = false;
+                button.textContent = 'แจ้งผู้ดูแลเรื่องยกเลิกอีกครั้ง';
+            }
+        }
+
+        async function resendCustomerCancellationEmail() {
+            const button = byId('resend-customer-cancellation-email');
+            button.disabled = true;
+            button.textContent = 'กำลังแจ้งลูกค้า...';
+            byId('edit-error').classList.add('hidden');
+            try {
+                const result = await sendAdminRequest('sendCancellationEmail', { id: byId('edit-id').value });
+                if (!result || result.status !== 'success') {
+                    throw new Error(result && result.message ? result.message : 'ส่งอีเมลแจ้งการยกเลิกไม่สำเร็จ');
+                }
+                showNotice(`ส่งอีเมลแจ้งการยกเลิกไปยัง ${result.data.email} แล้ว`, 'success');
+            } catch (error) {
+                byId('edit-error').textContent = error.message;
+                byId('edit-error').classList.remove('hidden');
+                if (/เซสชัน|บัญชีถูกปิด/.test(error.message)) signOut(error.message);
+            } finally {
+                button.disabled = false;
+                button.textContent = 'แจ้งลูกค้าเรื่องยกเลิกอีกครั้ง';
             }
         }
 
@@ -1226,6 +1328,8 @@
         byId('password-tab').addEventListener('click', () => showPanel('password'));
         byId('edit-form').addEventListener('submit', saveBooking);
         byId('send-confirmation-button').addEventListener('click', resendConfirmationEmail);
+        byId('resend-cancellation-notification').addEventListener('click', resendCancellationNotification);
+        byId('resend-customer-cancellation-email').addEventListener('click', resendCustomerCancellationEmail);
         byId('edit-checkin').addEventListener('change', updateNightCount);
         byId('edit-checkout').addEventListener('change', updateNightCount);
         byId('close-dialog').addEventListener('click', () => byId('edit-dialog').close());

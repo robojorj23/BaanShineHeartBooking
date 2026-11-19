@@ -4,8 +4,9 @@ const ADMIN_SESSION_DURATION_SECONDS = 30 * 24 * 60 * 60;
 function doGet(e) {
   const callback = e && e.parameter ? e.parameter.callback : '';
   try {
-    const data = getAvailability_();
-    return jsonOutput_({ status: 'success', data: data }, callback);
+    const bookingWindow = getBookingWindow_();
+    const data = getAvailability_(bookingWindow);
+    return jsonOutput_({ status: 'success', data: data, bookingWindow: bookingWindow }, callback);
   } catch (err) {
     console.error(err && err.stack ? err.stack : err);
     return jsonOutput_({ status: 'error', message: 'ไม่สามารถอ่านข้อมูลการจองได้' }, callback);
@@ -62,6 +63,12 @@ function handleAdminRequest_(request) {
   }
   if (request.action === 'sendConfirmationEmail') {
     return resendBookingConfirmationEmail_(request.id);
+  }
+  if (request.action === 'sendCancellationNotification') {
+    return resendCancellationNotification_(request.id);
+  }
+  if (request.action === 'sendCancellationEmail') {
+    return resendBookingCancellationEmail_(request.id);
   }
   if (request.action === 'listUsers') {
     requireSuperAdmin_(session);
@@ -320,7 +327,8 @@ function getAdminUserSheet_() {
   if (!sheet) throw new Error('ไม่พบชีต user กรุณาเรียก setupInitialAdmin ใน Apps Script');
 
   const headers = ['username', 'passwordhash', 'salt', 'role', 'active', 'createdat', 'updatedat', 'sessionversion'];
-  const actualHeaders = sheet.getRange(1, 1, 1, headers.length).getDisplayValues()[0]
+  const lastColumn = sheet.getLastColumn();
+  const actualHeaders = sheet.getRange(1, 1, 1, lastColumn).getDisplayValues()[0]
     .map(function(value) { return String(value || '').trim().toLowerCase(); });
   if (!headers.every(function(header, index) { return actualHeaders[index] === header; })) {
     throw new Error('หัวคอลัมน์ในชีต user ไม่ถูกต้อง');
@@ -335,7 +343,8 @@ function getAdminUserSheet_() {
       active: 4,
       createdAt: 5,
       updatedAt: 6,
-      sessionVersion: 7
+      sessionVersion: 7,
+      email: actualHeaders.indexOf('email')
     }
   };
 }
@@ -496,6 +505,8 @@ function updateAdminBooking_(booking) {
   const lock = LockService.getScriptLock();
   let updatedBooking;
   let shouldSendConfirmation = false;
+  let shouldSendCancellationNotification = false;
+  let shouldSendCustomerCancellationEmail = false;
   lock.waitLock(30000);
   try {
     if (!booking || typeof booking !== 'object') {
@@ -510,6 +521,9 @@ function updateAdminBooking_(booking) {
     const checkOut = String(booking.checkOut || '').trim();
     const people = String(booking.people || '').trim();
     const comment = String(booking.comment || '');
+    const adminRemark = booking.adminRemark === undefined || booking.adminRemark === null
+      ? null
+      : String(booking.adminRemark);
     const status = String(booking.status || '').trim().toLowerCase();
     const totalPrice = Number(booking.totalPrice);
 
@@ -521,7 +535,8 @@ function updateAdminBooking_(booking) {
     if (['booking', 'confirmed', 'complete', 'cancel'].indexOf(status) < 0) {
       return { status: 'error', message: 'สถานะต้องเป็น booking, confirmed, complete หรือ cancel' };
     }
-    if (!Number.isFinite(totalPrice) || totalPrice < 0 || comment.length > 5000) {
+    if (!Number.isFinite(totalPrice) || totalPrice < 0 || comment.length > 5000 ||
+        (adminRemark !== null && adminRemark.length > 5000)) {
       return { status: 'error', message: 'กรุณาตรวจสอบยอดเงินหรือข้อความเพิ่มเติม' };
     }
     if (email && !isValidEmail_(email)) {
@@ -532,6 +547,10 @@ function updateAdminBooking_(booking) {
     }
 
     const sheetInfo = ensureBookingMetadataColumns_(getBookingSheet_());
+    if (!Number.isInteger(sheetInfo.columns.adminRemark) ||
+        sheetInfo.columns.adminRemark < 0 || sheetInfo.columns.adminRemark >= sheetInfo.headers.length) {
+      return { status: 'error', message: 'ไม่พบคอลัมน์ adminRemark ในชีตการจอง' };
+    }
     const rows = sheetInfo.sheet.getDataRange().getValues();
     let targetRowIndex = -1;
     for (let rowIndex = 1; rowIndex < rows.length; rowIndex++) {
@@ -541,8 +560,10 @@ function updateAdminBooking_(booking) {
       }
     }
     if (targetRowIndex < 0) return { status: 'error', message: 'ไม่พบรายการจองนี้ อาจถูกลบไปแล้ว' };
-    shouldSendConfirmation = status === 'confirmed' &&
-      getRowStatus_(rows[targetRowIndex], sheetInfo.columns.statuses).toLowerCase() !== 'confirmed';
+    const previousStatus = getRowStatus_(rows[targetRowIndex], sheetInfo.columns.statuses).toLowerCase();
+    shouldSendConfirmation = status === 'confirmed' && previousStatus !== 'confirmed';
+    shouldSendCancellationNotification = status === 'cancel' && !isCancelledStatus_(previousStatus);
+    shouldSendCustomerCancellationEmail = shouldSendCancellationNotification;
 
     if (!isCancelledStatus_(status)) {
       for (let rowIndex = 1; rowIndex < rows.length; rowIndex++) {
@@ -571,6 +592,9 @@ function updateAdminBooking_(booking) {
     );
     updatedRow[sheetInfo.columns.people] = people;
     updatedRow[sheetInfo.columns.comment] = comment;
+    updatedRow[sheetInfo.columns.adminRemark] = adminRemark === null
+      ? String(updatedRow[sheetInfo.columns.adminRemark] || '')
+      : adminRemark;
     updatedRow[sheetInfo.columns.totalPrice] = totalPrice;
     updatedRow[sheetInfo.columns.email] = email;
     sheetInfo.columns.statuses.forEach(function(columnIndex) {
@@ -594,6 +618,28 @@ function updateAdminBooking_(booking) {
       result.emailStatus = 'failed';
       const detail = error && error.message ? String(error.message).slice(0, 300) : 'ไม่ทราบสาเหตุ';
       result.emailMessage = 'บันทึกการยืนยันแล้ว แต่ส่งอีเมลไม่สำเร็จ: ' + detail;
+    }
+  }
+  if (shouldSendCancellationNotification) {
+    try {
+      sendBookingNotificationToAdmins_(updatedBooking, 'cancel');
+      result.adminNotificationStatus = 'sent';
+    } catch (error) {
+      console.error('ไม่สามารถส่งอีเมลแจ้งการยกเลิกให้ผู้ดูแลได้:', error && error.stack ? error.stack : error);
+      result.adminNotificationStatus = 'failed';
+      const detail = error && error.message ? String(error.message).slice(0, 300) : 'ไม่ทราบสาเหตุ';
+      result.adminNotificationMessage = 'บันทึกการยกเลิกแล้ว แต่แจ้งเตือนผู้ดูแลทางอีเมลไม่สำเร็จ: ' + detail;
+    }
+  }
+  if (shouldSendCustomerCancellationEmail) {
+    try {
+      sendBookingCancellationEmail_(updatedBooking);
+      result.customerEmailStatus = 'sent';
+    } catch (error) {
+      console.error('ไม่สามารถส่งอีเมลแจ้งการยกเลิกให้ลูกค้าได้:', error && error.stack ? error.stack : error);
+      result.customerEmailStatus = 'failed';
+      const detail = error && error.message ? String(error.message).slice(0, 300) : 'ไม่ทราบสาเหตุ';
+      result.customerEmailMessage = 'บันทึกการยกเลิกแล้ว แต่แจ้งลูกค้าทางอีเมลไม่สำเร็จ: ' + detail;
     }
   }
   return result;
@@ -620,6 +666,54 @@ function resendBookingConfirmationEmail_(bookingId) {
   }
 
   sendBookingConfirmationEmail_(booking);
+  return { status: 'success', data: { email: booking.email } };
+}
+
+function resendCancellationNotification_(bookingId) {
+  const lock = LockService.getScriptLock();
+  let booking;
+  lock.waitLock(30000);
+  try {
+    const sheetInfo = getBookingSheet_();
+    const rows = sheetInfo.sheet.getDataRange().getValues();
+    for (let rowIndex = 1; rowIndex < rows.length; rowIndex++) {
+      if (String(rows[rowIndex][sheetInfo.columns.id] || '').trim() !== String(bookingId || '').trim()) continue;
+      booking = bookingRecordFromRow_(rows[rowIndex], sheetInfo);
+      break;
+    }
+    if (!booking) return { status: 'error', message: 'ไม่พบรายการจองนี้' };
+    if (!isCancelledStatus_(booking.status)) {
+      return { status: 'error', message: 'ส่งการแจ้งเตือนได้เฉพาะรายการที่ยกเลิกแล้ว' };
+    }
+  } finally {
+    lock.releaseLock();
+  }
+
+  sendBookingNotificationToAdmins_(booking, 'cancel');
+  return { status: 'success', message: 'ส่งอีเมลแจ้งการยกเลิกให้ผู้ดูแลแล้ว' };
+}
+
+function resendBookingCancellationEmail_(bookingId) {
+  const lock = LockService.getScriptLock();
+  let booking;
+  lock.waitLock(30000);
+  try {
+    const sheetInfo = getBookingSheet_();
+    const rows = sheetInfo.sheet.getDataRange().getValues();
+    for (let rowIndex = 1; rowIndex < rows.length; rowIndex++) {
+      if (String(rows[rowIndex][sheetInfo.columns.id] || '').trim() !== String(bookingId || '').trim()) continue;
+      booking = bookingRecordFromRow_(rows[rowIndex], sheetInfo);
+      break;
+    }
+    if (!booking) return { status: 'error', message: 'ไม่พบรายการจองนี้' };
+    if (!isCancelledStatus_(booking.status)) {
+      return { status: 'error', message: 'ส่งอีเมลได้เฉพาะรายการที่ยกเลิกแล้ว' };
+    }
+  } finally {
+    lock.releaseLock();
+  }
+
+  sendBookingCancellationEmail_(booking);
   return { status: 'success', data: { email: booking.email } };
 }
 
@@ -676,6 +770,55 @@ function sendBookingConfirmationEmail_(booking) {
   });
 }
 
+function sendBookingCancellationEmail_(booking) {
+  if (!booking || !isValidEmail_(booking.email)) {
+    throw new Error('ไม่มีอีเมลลูกค้าที่ถูกต้องสำหรับรายการจองนี้');
+  }
+
+  const escapeHtml = function(value) {
+    return String(value == null || value === '' ? 'ไม่มี' : value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  };
+  const details = [
+    ['รหัสจอง', booking.id],
+    ['ชื่อผู้จอง', booking.name],
+    ['อีเมล', booking.email],
+    ['เบอร์โทรศัพท์', booking.phone],
+    ['วันเข้าพัก', booking.checkIn],
+    ['วันเช็คเอาท์', booking.checkOut],
+    ['จำนวนคืน', String(booking.nights) + ' คืน'],
+    ['จำนวนผู้เข้าพัก', booking.people],
+    ['ยอดชำระวันเข้าพัก', '฿' + (Number(booking.totalPrice) || 0).toLocaleString('th-TH') + ' บาท'],
+    ['คำขอเพิ่มเติม', booking.comment || 'ไม่มี'],
+    ['สถานะ', 'ยกเลิกแล้ว']
+  ];
+  const textDetails = details.map(function(detail) {
+    return detail[0] + ': ' + (detail[1] || 'ไม่มี');
+  }).join('\n');
+  const htmlRows = details.map(function(detail) {
+    return '<tr><th style="padding:8px;text-align:left;border-bottom:1px solid #e2e8f0">' +
+      escapeHtml(detail[0]) + '</th><td style="padding:8px;border-bottom:1px solid #e2e8f0">' +
+      escapeHtml(detail[1]) + '</td></tr>';
+  }).join('');
+  MailApp.sendEmail({
+    to: booking.email,
+    subject: 'แจ้งยกเลิกการจองบ้านชายหาด ' + booking.id,
+    body: 'เรียน คุณ' + (booking.name || '') + '\n\n' +
+      'แจ้งให้ทราบว่ารายการจองบ้านชายหาดของท่านถูกยกเลิกแล้ว รายละเอียด:\n' + textDetails +
+      '\n\nสอบถามเพิ่มเติม ติดต่อพี่จอร์จ 080-565-0481',
+    htmlBody: '<div style="font-family:Arial,sans-serif;color:#1e293b;line-height:1.6">' +
+      '<p>เรียน คุณ' + escapeHtml(booking.name) + '</p>' +
+      '<p>แจ้งให้ทราบว่ารายการจองบ้านชายหาดของท่านถูกยกเลิกแล้ว รายละเอียด:</p>' +
+      '<table style="border-collapse:collapse;width:100%;max-width:640px">' + htmlRows + '</table>' +
+      '<p>สอบถามเพิ่มเติม ติดต่อพี่จอร์จ 080-565-0481</p></div>',
+    name: 'บ้านชายหาด'
+  });
+}
+
 function authorizeBookingEmailSending() {
   return MailApp.getRemainingDailyQuota();
 }
@@ -691,6 +834,7 @@ function bookingRecordFromRow_(row, sheetInfo) {
     people: String(row[sheetInfo.columns.people] || ''),
     email: sheetInfo.columns.email >= 0 ? String(row[sheetInfo.columns.email] || '') : '',
     bookBy: sheetInfo.columns.bookBy >= 0 ? String(row[sheetInfo.columns.bookBy] || '') : '',
+    adminRemark: sheetInfo.columns.adminRemark >= 0 ? String(row[sheetInfo.columns.adminRemark] || '') : '',
     status: getRowStatus_(row, sheetInfo.columns.statuses),
     comment: String(row[sheetInfo.columns.comment] || ''),
     totalPrice: Number(row[sheetInfo.columns.totalPrice]) || 0,
@@ -706,33 +850,85 @@ function dateTimeCellToString_(value) {
   return String(value || '');
 }
 
-function getAvailability_() {
+function getAvailability_(bookingWindow) {
+  const window = bookingWindow || getBookingWindow_();
   const sheetInfo = getBookingSheet_();
-  const values = sheetInfo.sheet.getDataRange().getValues();
+  const lastRow = sheetInfo.sheet.getLastRow();
+  if (lastRow < 2) return [];
+
+  const requiredColumns = [
+    sheetInfo.columns.checkIn,
+    sheetInfo.columns.checkOut
+  ].concat(sheetInfo.columns.statuses);
+  const firstColumn = Math.min.apply(null, requiredColumns);
+  const lastColumn = Math.max.apply(null, requiredColumns);
+  const rows = sheetInfo.sheet.getRange(
+    2,
+    firstColumn + 1,
+    lastRow - 1,
+    lastColumn - firstColumn + 1
+  ).getValues();
   const records = [];
 
-  for (let rowIndex = 1; rowIndex < values.length; rowIndex++) {
-    const row = values[rowIndex];
-    const checkIn = dateCellToIso_(row[sheetInfo.columns.checkIn]);
-    const checkOut = dateCellToIso_(row[sheetInfo.columns.checkOut]);
+  for (let rowIndex = 0; rowIndex < rows.length; rowIndex++) {
+    const row = rows[rowIndex];
+    const checkIn = dateCellToIso_(row[sheetInfo.columns.checkIn - firstColumn]);
+    const checkOut = dateCellToIso_(row[sheetInfo.columns.checkOut - firstColumn]);
     if (!checkIn || !checkOut || checkOut <= checkIn) continue;
+    if (checkOut <= window.startDate || checkIn > window.maxCheckIn) continue;
 
     records.push({
       checkIn: checkIn,
       checkOut: checkOut,
-      status: getRowStatus_(row, sheetInfo.columns.statuses)
+      status: getRowStatus_(row, sheetInfo.columns.statuses.map(function(column) {
+        return column - firstColumn;
+      }))
     });
   }
 
   return records;
 }
 
-function createAdminBooking_(booking, session) {
-  return reserveBooking_(booking, session.username, true);
+function getBookingWindow_() {
+  const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+  const timeZone = spreadsheet
+    ? spreadsheet.getSpreadsheetTimeZone()
+    : Session.getScriptTimeZone();
+  const startDate = Utilities.formatDate(new Date(), timeZone, 'yyyy-MM-dd');
+  return {
+    startDate: startDate,
+    maxCheckIn: addMonthsToIsoDate_(startDate, 3)
+  };
 }
 
-function reserveBooking_(booking, bookBy, skipDuplicateRequest) {
+function addMonthsToIsoDate_(dateValue, months) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(dateValue || ''));
+  if (!match) throw new Error('วันที่สำหรับคำนวณช่วงจองไม่ถูกต้อง');
+
+  const year = Number(match[1]);
+  const month = Number(match[2]) - 1 + months;
+  const day = Number(match[3]);
+  const targetMonthDate = new Date(Date.UTC(year, month, 1));
+  const targetLastDay = new Date(Date.UTC(
+    targetMonthDate.getUTCFullYear(),
+    targetMonthDate.getUTCMonth() + 1,
+    0
+  )).getUTCDate();
+  return [
+    targetMonthDate.getUTCFullYear(),
+    String(targetMonthDate.getUTCMonth() + 1).padStart(2, '0'),
+    String(Math.min(day, targetLastDay)).padStart(2, '0')
+  ].join('-');
+}
+
+function createAdminBooking_(booking, session) {
+  return reserveBooking_(booking, session.username, true, true);
+}
+
+function reserveBooking_(booking, bookBy, skipDuplicateRequest, allowBeyondBookingWindow) {
   const lock = LockService.getScriptLock();
+  let bookingResult;
+  let notificationBooking;
   lock.waitLock(30000);
   try {
     if (!booking || typeof booking !== 'object') {
@@ -743,6 +939,16 @@ function reserveBooking_(booking, bookBy, skipDuplicateRequest) {
     const checkOut = String(booking.checkOut || '').trim();
     if (!isValidIsoDate_(checkIn) || !isValidIsoDate_(checkOut) || checkOut <= checkIn) {
       return { status: 'error', message: 'กรุณาตรวจสอบวันที่เข้าพัก' };
+    }
+    const bookingWindow = getBookingWindow_();
+    if (checkIn < bookingWindow.startDate ||
+        (!allowBeyondBookingWindow && checkIn > bookingWindow.maxCheckIn)) {
+      return {
+        status: 'error',
+        message: allowBeyondBookingWindow
+          ? 'ไม่สามารถจองวันที่ผ่านมาแล้วได้'
+          : 'สามารถจองได้ตั้งแต่วันนี้และล่วงหน้าไม่เกิน 3 เดือน'
+      };
     }
 
     const name = String(booking.name || '').trim();
@@ -805,6 +1011,7 @@ function reserveBooking_(booking, bookBy, skipDuplicateRequest) {
       bookBy: String(bookBy || 'website'),
       status: 'booking',
       comment: String(booking.notes || booking.comment || ''),
+      adminRemark: '',
       totalPrice: Number(booking.totalPrice) || 0,
       createdAt: new Date()
     };
@@ -823,7 +1030,8 @@ function reserveBooking_(booking, bookBy, skipDuplicateRequest) {
         checkout: 'checkOut',
         totalprice: 'totalPrice',
         createdat: 'createdAt',
-        bookby: 'bookBy'
+        bookby: 'bookBy',
+        adminremark: 'adminRemark'
       }[normalizedHeader] || normalizedHeader;
       return Object.prototype.hasOwnProperty.call(record, recordKey) ? record[recordKey] : '';
     });
@@ -834,7 +1042,8 @@ function reserveBooking_(booking, bookBy, skipDuplicateRequest) {
 
     sheetInfo.sheet.getRange(sheetInfo.sheet.getLastRow() + 1, 1, 1, newRow.length).setValues([newRow]);
     SpreadsheetApp.flush();
-    return {
+    notificationBooking = record;
+    bookingResult = {
       status: 'success',
       data: {
         id: record.id,
@@ -846,6 +1055,96 @@ function reserveBooking_(booking, bookBy, skipDuplicateRequest) {
   } finally {
     lock.releaseLock();
   }
+
+  try {
+    sendNewBookingNotificationToAdmins_(notificationBooking);
+    bookingResult.adminNotificationStatus = 'sent';
+  } catch (error) {
+    console.error('ไม่สามารถส่งอีเมลแจ้งเตือนการจองให้ผู้ดูแลได้:', error && error.stack ? error.stack : error);
+    bookingResult.adminNotificationStatus = 'failed';
+    const detail = error && error.message ? String(error.message).slice(0, 300) : 'ไม่ทราบสาเหตุ';
+    bookingResult.adminNotificationMessage = 'บันทึกการจองแล้ว แต่แจ้งเตือนผู้ดูแลทางอีเมลไม่สำเร็จ: ' + detail;
+  }
+  return bookingResult;
+}
+
+function sendNewBookingNotificationToAdmins_(booking) {
+  return sendBookingNotificationToAdmins_(booking, 'new');
+}
+
+function sendBookingNotificationToAdmins_(booking, eventType) {
+  const userInfo = getAdminUserSheet_();
+  const emailColumn = userInfo.columns.email;
+  if (emailColumn < 0) throw new Error('ไม่พบคอลัมน์ email ในชีต user');
+
+  const rows = userInfo.sheet.getDataRange().getValues();
+  const seenEmails = {};
+  const recipients = [];
+  const adminsWithoutValidEmail = [];
+  for (let rowIndex = 1; rowIndex < rows.length; rowIndex++) {
+    const row = rows[rowIndex];
+    const username = String(row[userInfo.columns.username] || '').trim();
+    if (!username || !isAdminUserActive_({ active: row[userInfo.columns.active] })) {
+      continue;
+    }
+
+    const email = String(row[emailColumn] || '').trim();
+    if (!isValidEmail_(email)) {
+      adminsWithoutValidEmail.push(username);
+      continue;
+    }
+    const normalizedEmail = email.toLowerCase();
+    if (seenEmails[normalizedEmail]) continue;
+    seenEmails[normalizedEmail] = true;
+    recipients.push(email);
+  }
+  if (adminsWithoutValidEmail.length) {
+    throw new Error('มีบัญชีผู้ดูแลที่เปิดใช้งานแต่ไม่มี email ที่ถูกต้องในชีต user');
+  }
+  if (!recipients.length) throw new Error('ไม่พบ email ที่ถูกต้องของผู้ดูแลที่เปิดใช้งานในชีต user');
+
+  const escapeHtml = function(value) {
+    return String(value == null || value === '' ? 'ไม่มี' : value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  };
+  const details = [
+    ['รหัสจอง', booking.id],
+    ['ผู้ทำรายการ', booking.bookBy || 'website'],
+    ['ชื่อผู้จอง', booking.name],
+    ['อีเมลลูกค้า', booking.email],
+    ['เบอร์โทรศัพท์', booking.phone],
+    ['วันเข้าพัก', booking.checkIn],
+    ['วันเช็คเอาท์', booking.checkOut],
+    ['จำนวนคืน', String(booking.nights) + ' คืน'],
+    ['จำนวนผู้เข้าพัก', booking.guests || booking.people],
+    ['ยอดชำระวันเข้าพัก', '฿' + (Number(booking.totalPrice) || 0).toLocaleString('th-TH') + ' บาท'],
+    ['คำขอเพิ่มเติม', booking.comment || 'ไม่มี'],
+    ['สถานะ', eventType === 'cancel' ? 'ยกเลิกแล้ว' : 'รอแอดมินยืนยัน']
+  ];
+  const textDetails = details.map(function(detail) {
+    return detail[0] + ': ' + (detail[1] || 'ไม่มี');
+  }).join('\n');
+  const htmlRows = details.map(function(detail) {
+    return '<tr><th style="padding:8px;text-align:left;border-bottom:1px solid #e2e8f0">' +
+      escapeHtml(detail[0]) + '</th><td style="padding:8px;border-bottom:1px solid #e2e8f0">' +
+      escapeHtml(detail[1]) + '</td></tr>';
+  }).join('');
+  const eventTitle = eventType === 'cancel' ? 'มีการยกเลิกรายการจอง' : 'มีรายการจองใหม่เข้ามา';
+  const message = {
+    to: recipients[0],
+    subject: eventTitle + ' ' + booking.id + ' — บ้านชายหาด',
+    body: eventTitle + ' รายละเอียด:\n\n' + textDetails,
+    htmlBody: '<div style="font-family:Arial,sans-serif;color:#1e293b;line-height:1.6">' +
+      '<p>' + eventTitle + ' รายละเอียด:</p>' +
+      '<table style="border-collapse:collapse;width:100%;max-width:640px">' + htmlRows + '</table></div>',
+    name: 'บ้านชายหาด'
+  };
+  if (recipients.length > 1) message.bcc = recipients.slice(1).join(',');
+  MailApp.sendEmail(message);
 }
 
 function getNextBookingId_(rows, idColumn, createdAtColumn, year) {
@@ -920,6 +1219,7 @@ function getBookingSheet_() {
         createdAt: normalized.indexOf('createdat'),
         email: normalized.indexOf('email'),
         bookBy: normalized.indexOf('bookby'),
+        adminRemark: normalized.indexOf('adminremark'),
         statuses: normalized.reduce(function(indices, header, index) {
           if (header === 'status') indices.push(index);
           return indices;
@@ -935,6 +1235,9 @@ function ensureBookingMetadataColumns_(sheetInfo) {
   const missingHeaders = [];
   if (sheetInfo.columns.email < 0) missingHeaders.push('email');
   if (sheetInfo.columns.bookBy < 0) missingHeaders.push('bookBy');
+  if (!Number.isInteger(sheetInfo.columns.adminRemark) || sheetInfo.columns.adminRemark < 0) {
+    missingHeaders.push('adminRemark');
+  }
   if (!missingHeaders.length) return sheetInfo;
 
   const firstNewColumn = sheetInfo.sheet.getLastColumn() + 1;
@@ -942,7 +1245,8 @@ function ensureBookingMetadataColumns_(sheetInfo) {
   missingHeaders.forEach(function(header, index) {
     const columnIndex = firstNewColumn - 1 + index;
     sheetInfo.headers.push(header);
-    sheetInfo.columns[header === 'email' ? 'email' : 'bookBy'] = columnIndex;
+    const columnKey = { email: 'email', bookBy: 'bookBy', adminRemark: 'adminRemark' }[header];
+    sheetInfo.columns[columnKey] = columnIndex;
   });
   return sheetInfo;
 }
