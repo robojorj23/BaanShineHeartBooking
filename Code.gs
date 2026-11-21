@@ -1,5 +1,15 @@
 const ADMIN_PASSWORD_HASH_ITERATIONS = 4000;
 const ADMIN_SESSION_DURATION_SECONDS = 30 * 24 * 60 * 60;
+const FIRESTORE_PROJECT_ID = 'hotelbooking-29ac6';
+const FIRESTORE_DATABASE_ID = '(default)';
+const FIRESTORE_BOOKING_HEADERS = [
+  'id', 'name', 'phone', 'checkin', 'checkout', 'nights', 'people', 'comment',
+  'status', 'totalprice', 'createdat', 'email', 'bookby', 'adminRemark'
+];
+const FIRESTORE_ADMIN_HEADERS = [
+  'username', 'passwordHash', 'salt', 'role', 'active', 'createdAt',
+  'updatedAt', 'sessionVersion', 'email'
+];
 
 function doGet(e) {
   const callback = e && e.parameter ? e.parameter.callback : '';
@@ -32,6 +42,211 @@ function doPost(e) {
   }
 
   return postMessageOutput_(parameters.nonce, result, 'bsh-booking-result');
+}
+
+function firestoreApiUrl_(path) {
+  return 'https://firestore.googleapis.com/v1/projects/' +
+    encodeURIComponent(FIRESTORE_PROJECT_ID) + '/databases/' +
+    encodeURIComponent(FIRESTORE_DATABASE_ID) + '/documents/' + path;
+}
+
+function firestoreRequest_(method, url, payload, allowNotFound) {
+  const options = {
+    method: method,
+    headers: { Authorization: 'Bearer ' + ScriptApp.getOAuthToken() },
+    muteHttpExceptions: true
+  };
+  if (payload !== undefined) {
+    options.contentType = 'application/json';
+    options.payload = JSON.stringify(payload);
+  }
+  const response = UrlFetchApp.fetch(url, options);
+  const statusCode = response.getResponseCode();
+  const responseText = response.getContentText();
+  if (allowNotFound && statusCode === 404) return null;
+  if (statusCode < 200 || statusCode >= 300) {
+    let message = responseText;
+    try {
+      const error = JSON.parse(responseText);
+      if (error.error && error.error.message) message = error.error.message;
+    } catch (ignored) {
+      message = responseText;
+    }
+    throw new Error('Firestore API ' + statusCode + ': ' + message);
+  }
+  if (!responseText) return null;
+  return JSON.parse(responseText);
+}
+
+function firestoreEncodeValue_(value) {
+  if (value === null || value === undefined) return { nullValue: null };
+  if (value instanceof Date) {
+    if (isNaN(value.getTime())) throw new Error('Firestore ไม่สามารถบันทึกวันที่ที่ไม่ถูกต้องได้');
+    return { timestampValue: value.toISOString() };
+  }
+  if (typeof value === 'string') return { stringValue: value };
+  if (typeof value === 'boolean') return { booleanValue: value };
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return Number.isInteger(value)
+      ? { integerValue: String(value) }
+      : { doubleValue: value };
+  }
+  throw new Error('ชนิดข้อมูลนี้ไม่รองรับใน Firestore: ' + typeof value);
+}
+
+function firestoreDecodeValue_(value) {
+  if (Object.prototype.hasOwnProperty.call(value, 'stringValue')) return value.stringValue;
+  if (Object.prototype.hasOwnProperty.call(value, 'integerValue')) return Number(value.integerValue);
+  if (Object.prototype.hasOwnProperty.call(value, 'doubleValue')) return Number(value.doubleValue);
+  if (Object.prototype.hasOwnProperty.call(value, 'booleanValue')) return value.booleanValue;
+  if (Object.prototype.hasOwnProperty.call(value, 'timestampValue')) return new Date(value.timestampValue);
+  if (Object.prototype.hasOwnProperty.call(value, 'nullValue')) return '';
+  if (value.mapValue) {
+    const result = {};
+    Object.keys(value.mapValue.fields || {}).forEach(function(key) {
+      result[key] = firestoreDecodeValue_(value.mapValue.fields[key]);
+    });
+    return result;
+  }
+  if (value.arrayValue) {
+    return (value.arrayValue.values || []).map(firestoreDecodeValue_);
+  }
+  if (value.referenceValue) return value.referenceValue;
+  throw new Error('Firestore ส่งชนิดข้อมูลที่ไม่รองรับกลับมา');
+}
+
+function firestoreFieldsFromRecord_(record) {
+  const fields = {};
+  Object.keys(record).forEach(function(key) {
+    fields[key] = firestoreEncodeValue_(record[key]);
+  });
+  return fields;
+}
+
+function firestoreRecordFromDocument_(document) {
+  const record = {};
+  Object.keys(document.fields || {}).forEach(function(key) {
+    record[key] = firestoreDecodeValue_(document.fields[key]);
+  });
+  return record;
+}
+
+function firestoreDocumentUrl_(collectionName, documentId) {
+  return firestoreApiUrl_(encodeURIComponent(collectionName) + '/' + encodeURIComponent(documentId));
+}
+
+function firestoreGetDocument_(collectionName, documentId) {
+  return firestoreRequest_(
+    'get',
+    firestoreDocumentUrl_(collectionName, documentId),
+    undefined,
+    true
+  );
+}
+
+function firestoreListDocuments_(collectionName) {
+  const documents = [];
+  let pageToken = '';
+  do {
+    let url = firestoreApiUrl_(encodeURIComponent(collectionName)) + '?pageSize=1000';
+    if (pageToken) url += '&pageToken=' + encodeURIComponent(pageToken);
+    const page = firestoreRequest_('get', url);
+    Array.prototype.push.apply(documents, page.documents || []);
+    pageToken = page.nextPageToken || '';
+  } while (pageToken);
+  return documents;
+}
+
+function firestoreWriteDocument_(collectionName, documentId, record) {
+  const fields = firestoreFieldsFromRecord_(record);
+  const updateMask = Object.keys(fields).map(function(field) {
+    return 'updateMask.fieldPaths=' + encodeURIComponent(field);
+  }).join('&');
+  const url = firestoreDocumentUrl_(collectionName, documentId) +
+    (updateMask ? '?' + updateMask : '');
+  return firestoreRequest_('patch', url, { fields: fields });
+}
+
+function firestoreDeleteDocument_(collectionName, documentId) {
+  firestoreRequest_('delete', firestoreDocumentUrl_(collectionName, documentId));
+}
+
+function firestoreRows_(collectionName, headers) {
+  const rows = [headers.slice()];
+  firestoreListDocuments_(collectionName).forEach(function(document) {
+    const record = firestoreRecordFromDocument_(document);
+    rows.push(headers.map(function(header) {
+      return Object.prototype.hasOwnProperty.call(record, header) ? record[header] : '';
+    }));
+  });
+  return rows;
+}
+
+function createFirestoreSheetAdapter_(collectionName, headers, idField) {
+  const idColumn = headers.indexOf(idField);
+  if (idColumn < 0) throw new Error('Firestore schema ไม่มีคอลัมน์รหัสเอกสาร ' + idField);
+  return {
+    getLastColumn: function() {
+      return headers.length;
+    },
+    getLastRow: function() {
+      return firestoreRows_(collectionName, headers).length;
+    },
+    getDataRange: function() {
+      return { getValues: function() { return firestoreRows_(collectionName, headers); } };
+    },
+    getRange: function(row, column, rowCount, columnCount) {
+      const numberOfRows = rowCount || 1;
+      const numberOfColumns = columnCount || 1;
+      function getValues() {
+        return firestoreRows_(collectionName, headers).slice(row - 1, row - 1 + numberOfRows)
+          .map(function(values) { return values.slice(column - 1, column - 1 + numberOfColumns); });
+      }
+      return {
+        getValues: getValues,
+        getDisplayValues: function() {
+          return getValues().map(function(values) {
+            return values.map(function(value) { return value instanceof Date ? value.toISOString() : String(value); });
+          });
+        },
+        setValues: function(values) {
+          const currentRows = firestoreRows_(collectionName, headers);
+          values.forEach(function(updatedValues, index) {
+            const rowIndex = row - 1 + index;
+            if (rowIndex <= 0 || rowIndex > currentRows.length) {
+              throw new Error('Firestore ไม่สามารถแก้ไขแถวที่ไม่มีอยู่ได้');
+            }
+            const isAppend = rowIndex === currentRows.length;
+            const originalRow = isAppend ? headers.map(function() { return ''; }) : currentRows[rowIndex];
+            const updatedRow = originalRow.slice();
+            updatedValues.forEach(function(value, valueIndex) {
+              updatedRow[column - 1 + valueIndex] = value;
+            });
+            const previousId = String(originalRow[idColumn] || '').trim();
+            const nextId = String(updatedRow[idColumn] || '').trim();
+            if (!nextId) throw new Error('Firestore document id ต้องไม่ว่าง');
+            const record = {};
+            headers.forEach(function(header, headerIndex) {
+              record[header] = updatedRow[headerIndex];
+            });
+            firestoreWriteDocument_(collectionName, nextId, record);
+            if (previousId && previousId !== nextId) firestoreDeleteDocument_(collectionName, previousId);
+            if (isAppend) currentRows.push(updatedRow);
+          });
+        }
+      };
+    },
+    appendRow: function(values) {
+      const row = headers.map(function(header, index) {
+        return index < values.length ? values[index] : '';
+      });
+      const documentId = String(row[idColumn] || '').trim();
+      if (!documentId) throw new Error('Firestore document id ต้องไม่ว่าง');
+      const record = {};
+      headers.forEach(function(header, index) { record[header] = row[index]; });
+      firestoreWriteDocument_(collectionName, documentId, record);
+    }
+  };
 }
 
 function postMessageOutput_(nonce, result, messageType) {
@@ -98,24 +313,7 @@ function setupInitialAdmin() {
       throw new Error('ตั้งค่า ADMIN_BOOTSTRAP_PASSWORD ความยาว 8-128 ตัวอักษรใน Script Properties ก่อน');
     }
 
-    const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
-    if (!spreadsheet) throw new Error('สคริปต์ต้องผูกกับ Google Spreadsheet');
-    let sheet = spreadsheet.getSheetByName('user');
-    if (!sheet) sheet = spreadsheet.insertSheet('user');
-
-    const headers = ['username', 'passwordHash', 'salt', 'role', 'active', 'createdAt', 'updatedAt', 'sessionVersion'];
-    if (sheet.getLastRow() === 0) {
-      sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
-    } else {
-      const currentHeaders = sheet.getRange(1, 1, 1, headers.length).getDisplayValues()[0]
-        .map(function(value) { return String(value || '').trim().toLowerCase(); });
-      if (!headers.every(function(header, index) { return currentHeaders[index] === header.toLowerCase(); })) {
-        throw new Error('ชีต user มีหัวคอลัมน์ไม่ตรง กรุณาสำรองข้อมูลและตรวจสอบก่อน');
-      }
-    }
-
-    const rows = sheet.getDataRange().getValues();
-    if (rows.slice(1).some(function(row) { return String(row[0] || '').trim().toLowerCase() === 'robojorj'; })) {
+    if (findAdminUser_('robojorj')) {
       throw new Error('พบ username robojorj อยู่แล้ว ไม่ได้เปลี่ยนรหัสผ่าน');
     }
 
@@ -128,7 +326,7 @@ function setupInitialAdmin() {
 
     const salt = createPasswordSalt_();
     const now = new Date();
-    sheet.appendRow([
+    getAdminUserSheet_().sheet.appendRow([
       'robojorj',
       derivePasswordHash_(initialPassword, salt),
       salt,
@@ -139,7 +337,6 @@ function setupInitialAdmin() {
       1
     ]);
     properties.deleteProperty('ADMIN_BOOTSTRAP_PASSWORD');
-    SpreadsheetApp.flush();
     console.log('สร้างบัญชี superadmin robojorj สำเร็จ และลบ ADMIN_BOOTSTRAP_PASSWORD แล้ว');
     return 'บัญชี robojorj พร้อมใช้งาน';
   } finally {
@@ -171,7 +368,6 @@ function resetInitialAdminPassword() {
     row[userInfo.columns.updatedAt] = new Date();
     row[userInfo.columns.sessionVersion] = user.sessionVersion + 1;
     userInfo.sheet.getRange(user.rowIndex, 1, 1, row.length).setValues([row]);
-    SpreadsheetApp.flush();
     properties.deleteProperty('ADMIN_BOOTSTRAP_PASSWORD');
     CacheService.getScriptCache().remove(adminLoginRateLimitKey_('robojorj'));
     console.log('รีเซ็ตรหัสผ่าน superadmin robojorj สำเร็จ และลบ ADMIN_BOOTSTRAP_PASSWORD แล้ว');
@@ -321,6 +517,23 @@ function requireSuperAdmin_(user) {
 }
 
 function getAdminUserSheet_() {
+  return {
+    sheet: createFirestoreSheetAdapter_('adminUsers', FIRESTORE_ADMIN_HEADERS, 'username'),
+    columns: {
+      username: 0,
+      passwordHash: 1,
+      salt: 2,
+      role: 3,
+      active: 4,
+      createdAt: 5,
+      updatedAt: 6,
+      sessionVersion: 7,
+      email: 8
+    }
+  };
+}
+
+function getLegacyAdminUserSheet_() {
   const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
   if (!spreadsheet) throw new Error('สคริปต์ต้องผูกกับ Google Spreadsheet');
   const sheet = spreadsheet.getSheetByName('user');
@@ -405,7 +618,6 @@ function createAdminUser_(usernameValue, passwordValue) {
     const salt = createPasswordSalt_();
     const now = new Date();
     userInfo.sheet.appendRow([username, derivePasswordHash_(password, salt), salt, 'admin', true, now, now, 1]);
-    SpreadsheetApp.flush();
     return { status: 'success', data: { username: username, active: true, role: 'admin' } };
   } finally {
     lock.releaseLock();
@@ -449,7 +661,6 @@ function updateAdminUser_(usernameValue, newUsernameValue, newPasswordValue, act
       row[userInfo.columns.passwordHash] = derivePasswordHash_(newPassword, salt);
     }
     userInfo.sheet.getRange(user.rowIndex, 1, 1, row.length).setValues([row]);
-    SpreadsheetApp.flush();
     if (newPassword || newUsername !== username) {
       const cache = CacheService.getScriptCache();
       cache.remove(adminLoginRateLimitKey_(username));
@@ -483,7 +694,6 @@ function changeOwnAdminPassword_(session, currentPasswordValue, newPasswordValue
     row[userInfo.columns.updatedAt] = new Date();
     row[userInfo.columns.sessionVersion] = user.sessionVersion + 1;
     userInfo.sheet.getRange(user.rowIndex, 1, 1, row.length).setValues([row]);
-    SpreadsheetApp.flush();
     CacheService.getScriptCache().remove(adminLoginRateLimitKey_(session.username));
     return { status: 'success', message: 'เปลี่ยนรหัสผ่านแล้ว กรุณาเข้าสู่ระบบใหม่' };
   } finally {
@@ -498,7 +708,9 @@ function getAdminBookings_() {
     const id = String(row[sheetInfo.columns.id] || '').trim();
     if (!id) return null;
     return bookingRecordFromRow_(row, sheetInfo);
-  }).filter(Boolean).reverse();
+  }).filter(Boolean).sort(function(left, right) {
+    return String(right.createdAt || '').localeCompare(String(left.createdAt || ''));
+  });
 }
 
 function updateAdminBooking_(booking) {
@@ -614,7 +826,6 @@ function updateAdminBooking_(booking) {
     });
 
     sheetInfo.sheet.getRange(targetRowIndex + 1, 1, 1, updatedRow.length).setValues([updatedRow]);
-    SpreadsheetApp.flush();
     updatedBooking = bookingRecordFromRow_(updatedRow, sheetInfo);
   } finally {
     lock.releaseLock();
@@ -859,10 +1070,14 @@ function bookingRecordFromRow_(row, sheetInfo) {
 
 function dateTimeCellToString_(value) {
   if (value instanceof Date && !isNaN(value.getTime())) {
-    const timeZone = SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone();
+    const timeZone = getDateTimeZone_();
     return Utilities.formatDate(value, timeZone, 'yyyy-MM-dd HH:mm:ss');
   }
   return String(value || '');
+}
+
+function getDateTimeZone_() {
+  return Session.getScriptTimeZone();
 }
 
 function getAvailability_(bookingWindow) {
@@ -905,10 +1120,7 @@ function getAvailability_(bookingWindow) {
 }
 
 function getBookingWindow_() {
-  const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
-  const timeZone = spreadsheet
-    ? spreadsheet.getSpreadsheetTimeZone()
-    : Session.getScriptTimeZone();
+  const timeZone = Session.getScriptTimeZone();
   const startDate = Utilities.formatDate(new Date(), timeZone, 'yyyy-MM-dd');
   return {
     startDate: startDate,
@@ -1013,7 +1225,7 @@ function reserveBooking_(booking, bookBy, skipDuplicateRequest, allowBeyondBooki
       }
     }
 
-    const timeZone = SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone();
+    const timeZone = getDateTimeZone_();
     const currentYear = Number(Utilities.formatDate(new Date(), timeZone, 'yyyy'));
     const bookingId = getNextBookingId_(
       rows,
@@ -1057,13 +1269,11 @@ function reserveBooking_(booking, bookBy, skipDuplicateRequest, allowBeyondBooki
       }[normalizedHeader] || normalizedHeader;
       return Object.prototype.hasOwnProperty.call(record, recordKey) ? record[recordKey] : '';
     });
-    // The existing sheet has two status columns; keep both in sync.
     sheetInfo.columns.statuses.forEach(function(columnIndex) {
       newRow[columnIndex] = record.status;
     });
 
     sheetInfo.sheet.getRange(sheetInfo.sheet.getLastRow() + 1, 1, 1, newRow.length).setValues([newRow]);
-    SpreadsheetApp.flush();
     notificationBooking = record;
     bookingResult = {
       status: 'success',
@@ -1205,6 +1415,29 @@ function getYearPrefix_(year) {
 }
 
 function getBookingSheet_() {
+  return {
+    sheet: createFirestoreSheetAdapter_('bookings', FIRESTORE_BOOKING_HEADERS, 'id'),
+    headers: FIRESTORE_BOOKING_HEADERS.slice(),
+    columns: {
+      id: 0,
+      name: 1,
+      phone: 2,
+      checkIn: 3,
+      checkOut: 4,
+      nights: 5,
+      people: 6,
+      comment: 7,
+      statuses: [8],
+      totalPrice: 9,
+      createdAt: 10,
+      email: 11,
+      bookBy: 12,
+      adminRemark: 13
+    }
+  };
+}
+
+function getLegacyBookingSheet_() {
   const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
   if (!spreadsheet) throw new Error('สคริปต์ต้องผูกกับ Google Spreadsheet');
 
@@ -1253,6 +1486,106 @@ function getBookingSheet_() {
   }
 
   throw new Error('ไม่พบแท็บที่มีหัวคอลัมน์การจองครบถ้วน');
+}
+
+function migrateSheetsToFirestore() {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    const properties = PropertiesService.getScriptProperties();
+    if (properties.getProperty('FIRESTORE_MIGRATION_COMPLETE') === 'true') {
+      throw new Error('การย้ายข้อมูลจาก Google Sheet ไป Firestore เสร็จแล้ว');
+    }
+
+    const migrationStarted = properties.getProperty('FIRESTORE_MIGRATION_STARTED') === 'true';
+    if (!migrationStarted &&
+        (firestoreListDocuments_('bookings').length || firestoreListDocuments_('adminUsers').length)) {
+      throw new Error('Firestore มีข้อมูลอยู่แล้ว จึงหยุดการย้ายเพื่อป้องกันการเขียนทับ');
+    }
+
+    const bookingInfo = getLegacyBookingSheet_();
+    const userInfo = getLegacyAdminUserSheet_();
+    const bookingRows = bookingInfo.sheet.getDataRange().getValues();
+    const userRows = userInfo.sheet.getDataRange().getValues();
+    const imported = { bookings: 0, adminUsers: 0 };
+    const skipped = { bookings: 0, adminUsers: 0 };
+    const seenBookingIds = {};
+    const seenUsernames = {};
+    const bookingEntries = bookingRows.slice(1).map(function(row) {
+      return { row: row, booking: bookingRecordFromRow_(row, bookingInfo) };
+    }).filter(function(entry) { return entry.booking.id; });
+    const userEntries = userRows.slice(1).map(function(row) {
+      return { row: row, username: normalizeAdminUsername_(row[userInfo.columns.username]) };
+    }).filter(function(entry) { return entry.username; });
+
+    bookingEntries.forEach(function(entry) {
+      const booking = entry.booking;
+      if (seenBookingIds[booking.id]) throw new Error('พบรหัสจองซ้ำในชีต: ' + booking.id);
+      seenBookingIds[booking.id] = true;
+    });
+    userEntries.forEach(function(entry) {
+      if (seenUsernames[entry.username]) {
+        throw new Error('พบ username ซ้ำในชีต user: ' + entry.username);
+      }
+      seenUsernames[entry.username] = true;
+    });
+
+    properties.setProperty('FIRESTORE_MIGRATION_STARTED', 'true');
+    bookingEntries.forEach(function(entry) {
+      const row = entry.row;
+      const booking = entry.booking;
+      if (firestoreGetDocument_('bookings', booking.id)) {
+        skipped.bookings++;
+        return;
+      }
+
+      firestoreWriteDocument_('bookings', booking.id, {
+        id: booking.id,
+        name: booking.name,
+        phone: booking.phone,
+        checkin: booking.checkIn,
+        checkout: booking.checkOut,
+        nights: booking.nights,
+        people: booking.people,
+        comment: booking.comment,
+        status: booking.status,
+        totalprice: booking.totalPrice,
+        createdat: row[bookingInfo.columns.createdAt] || booking.createdAt,
+        email: booking.email,
+        bookby: booking.bookBy,
+        adminRemark: booking.adminRemark
+      });
+      imported.bookings++;
+    });
+
+    userEntries.forEach(function(entry) {
+      const row = entry.row;
+      const username = entry.username;
+      if (firestoreGetDocument_('adminUsers', username)) {
+        skipped.adminUsers++;
+        return;
+      }
+
+      firestoreWriteDocument_('adminUsers', username, {
+        username: username,
+        passwordHash: String(row[userInfo.columns.passwordHash] || ''),
+        salt: String(row[userInfo.columns.salt] || ''),
+        role: String(row[userInfo.columns.role] || 'admin'),
+        active: isAdminUserActive_({ active: row[userInfo.columns.active] }),
+        createdAt: row[userInfo.columns.createdAt] || '',
+        updatedAt: row[userInfo.columns.updatedAt] || '',
+        sessionVersion: Number(row[userInfo.columns.sessionVersion]) || 1,
+        email: userInfo.columns.email >= 0 ? String(row[userInfo.columns.email] || '') : ''
+      });
+      imported.adminUsers++;
+    });
+
+    properties.setProperty('FIRESTORE_MIGRATION_COMPLETE', 'true');
+    console.log(JSON.stringify({ imported: imported, skipped: skipped }));
+    return { status: 'success', imported: imported, skipped: skipped };
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 function ensureBookingMetadataColumns_(sheetInfo) {
@@ -1350,7 +1683,7 @@ function isCancelledStatus_(status) {
 
 function dateCellToIso_(value) {
   if (value instanceof Date && !isNaN(value.getTime())) {
-    const timeZone = SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone();
+    const timeZone = getDateTimeZone_();
     return Utilities.formatDate(value, timeZone, 'yyyy-MM-dd');
   }
   const text = String(value || '').trim();
