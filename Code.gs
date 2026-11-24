@@ -1493,10 +1493,6 @@ function migrateSheetsToFirestore() {
   lock.waitLock(30000);
   try {
     const properties = PropertiesService.getScriptProperties();
-    if (properties.getProperty('FIRESTORE_MIGRATION_COMPLETE') === 'true') {
-      throw new Error('การย้ายข้อมูลจาก Google Sheet ไป Firestore เสร็จแล้ว');
-    }
-
     const migrationStarted = properties.getProperty('FIRESTORE_MIGRATION_STARTED') === 'true';
     if (!migrationStarted &&
         (firestoreListDocuments_('bookings').length || firestoreListDocuments_('adminUsers').length)) {
@@ -1581,8 +1577,14 @@ function migrateSheetsToFirestore() {
     });
 
     properties.setProperty('FIRESTORE_MIGRATION_COMPLETE', 'true');
-    console.log(JSON.stringify({ imported: imported, skipped: skipped }));
-    return { status: 'success', imported: imported, skipped: skipped };
+    const result = {
+      status: 'success',
+      mode: migrationStarted ? 'incremental' : 'initial',
+      imported: imported,
+      skipped: skipped
+    };
+    console.log(JSON.stringify(result));
+    return result;
   } finally {
     lock.releaseLock();
   }
