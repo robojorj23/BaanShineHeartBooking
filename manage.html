@@ -346,11 +346,7 @@
                         <input id="create-email" type="email" required maxlength="254" autocomplete="email" placeholder="name@example.com" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2">
                     </label>
                     <label class="text-sm font-medium">จำนวนผู้เข้าพัก
-                        <select id="create-people" required class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2">
-                            <option value="6-8 ท่าน">6 - 8 ท่าน</option>
-                            <option value="9-11 ท่าน">9 - 11 ท่าน</option>
-                            <option value="12-14 ท่าน" selected>12 - 14 ท่าน (ตามมาตรฐานบ้านพัก)</option>
-                        </select>
+                        <input id="create-people" type="number" step="1" value="12" required inputmode="numeric" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2">
                     </label>
                 </div>
                 <label class="text-sm font-medium sm:col-span-2">ยอดชำระ (บาท)
@@ -358,6 +354,9 @@
                 </label>
                 <label class="text-sm font-medium sm:col-span-2">คำขอเพิ่มเติม
                     <textarea id="create-comment" rows="3" maxlength="5000" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"></textarea>
+                </label>
+                <label class="text-sm font-medium sm:col-span-2">หมายเหตุจากผู้ดูแล
+                    <textarea id="create-admin-remark" rows="3" maxlength="5000" placeholder="บันทึกหมายเหตุภายในสำหรับผู้ดูแล (ถ้ามี)" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"></textarea>
                 </label>
             </div>
             <div id="create-booking-error" class="hidden rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800"></div>
@@ -1185,8 +1184,9 @@
                 email,
                 checkIn: byId('create-checkin').value,
                 checkOut: byId('create-checkout').value,
-                guests: isHouseClosed ? '' : byId('create-people').value,
+                guests: isHouseClosed ? '' : Number(byId('create-people').value),
                 notes: byId('create-comment').value.trim(),
+                adminRemark: byId('create-admin-remark').value.trim(),
                 totalPrice: Number(byId('create-price').value),
                 status
             };

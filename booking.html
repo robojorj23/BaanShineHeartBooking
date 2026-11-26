@@ -904,7 +904,7 @@
                 const dayCell = document.createElement('button');
                 dayCell.type = 'button';
                 
-                let baseClass = 'h-14 sm:h-16 rounded-2xl flex flex-col justify-between p-2 border text-left transition-all relative overflow-hidden group font-medium text-xs ';
+                let baseClass = 'h-14 sm:h-16 rounded-2xl flex flex-col justify-between p-1 sm:p-2 border text-left transition-all relative overflow-hidden group font-medium text-xs ';
                 
                 if (isHouseClosed) {
                     baseClass += 'cal-day-closed shadow-inner';
@@ -923,7 +923,7 @@
                 dayCell.className = baseClass;
 
                 const priceBadge = !isPast && !isOutsideBookingWindow && !isBooked ?
-                    `<span class="hidden w-full whitespace-nowrap text-left text-[10px] sm:block ${isWeekendRate ? 'text-amber-600 font-bold' : 'text-slate-500'}">฿${(isWeekendRate ? WEEKEND_RATE : WEEKDAY_RATE).toLocaleString('th-TH')}</span>` : '';
+                    `<span class="w-full whitespace-nowrap text-left text-[7px] sm:text-[10px] ${isWeekendRate ? 'text-amber-600 font-bold' : 'text-slate-500'}">฿${(isWeekendRate ? WEEKEND_RATE : WEEKDAY_RATE).toLocaleString('th-TH')}</span>` : '';
 
                 const statusLabel = isHouseClosed
                     ? '<span class="block w-full break-words text-left text-[7px] leading-tight font-bold text-slate-800 sm:text-[10px]">Close-ปิดบ้าน</span>'

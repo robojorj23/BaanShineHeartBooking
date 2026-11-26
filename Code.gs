@@ -1153,10 +1153,14 @@ function createAdminBooking_(booking, session) {
   if (status !== 'booking' && !isHouseClosedStatus_(status)) {
     return { status: 'error', message: 'สร้างรายการได้เฉพาะสถานะรอยืนยันหรือ Close-ปิดบ้าน' };
   }
-  return reserveBooking_(booking, session.username, true, true, status);
+  const adminRemark = String(booking && booking.adminRemark || '');
+  if (adminRemark.length > 5000) {
+    return { status: 'error', message: 'หมายเหตุจากผู้ดูแลต้องมีความยาวไม่เกิน 5000 ตัวอักษร' };
+  }
+  return reserveBooking_(booking, session.username, true, true, status, adminRemark);
 }
 
-function reserveBooking_(booking, bookBy, skipDuplicateRequest, allowBeyondBookingWindow, requestedStatus) {
+function reserveBooking_(booking, bookBy, skipDuplicateRequest, allowBeyondBookingWindow, requestedStatus, adminRemark) {
   const lock = LockService.getScriptLock();
   let bookingResult;
   let notificationBooking;
@@ -1245,7 +1249,7 @@ function reserveBooking_(booking, bookBy, skipDuplicateRequest, allowBeyondBooki
       bookBy: String(bookBy || 'website'),
       status: status,
       comment: String(booking.notes || booking.comment || ''),
-      adminRemark: '',
+      adminRemark: String(adminRemark || ''),
       totalPrice: isHouseClosed ? 0 : Number(booking.totalPrice) || 0,
       createdAt: new Date()
     };
