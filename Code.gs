@@ -1594,6 +1594,66 @@ function migrateSheetsToFirestore() {
   }
 }
 
+function updateAcceptedBookingsToCompleted() {
+  return updateBookingStatuses_('ACCEPTED', 'COMPLETED');
+}
+
+function updateCompletedBookingsToComplete() {
+  return updateBookingStatuses_('COMPLETED', 'complete');
+}
+
+function updateBookingStatuses_(currentStatus, newStatus) {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    let updatedCount = 0;
+    firestoreListDocuments_('bookings').forEach(function(document) {
+      const booking = firestoreRecordFromDocument_(document);
+      if (booking.status !== currentStatus) return;
+
+      const documentId = document.name.substring(document.name.lastIndexOf('/') + 1);
+      firestoreWriteDocument_('bookings', documentId, { status: newStatus });
+      updatedCount++;
+    });
+
+    console.log('Updated booking statuses from ' + currentStatus + ' to ' + newStatus + ': ' + updatedCount);
+    return updatedCount;
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function exportBookingsToNewSpreadsheet() {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  let rows;
+  try {
+    rows = firestoreRows_('bookings', FIRESTORE_BOOKING_HEADERS);
+  } finally {
+    lock.releaseLock();
+  }
+
+  const timestamp = Utilities.formatDate(
+    new Date(),
+    Session.getScriptTimeZone(),
+    'yyyy-MM-dd HH:mm:ss'
+  );
+  const spreadsheet = SpreadsheetApp.create('Bookings Export ' + timestamp);
+  const sheet = spreadsheet.getSheets()[0];
+  sheet.setName('Bookings');
+  sheet.getRange(1, 1, rows.length, FIRESTORE_BOOKING_HEADERS.length).setValues(rows);
+  sheet.setFrozenRows(1);
+  sheet.autoResizeColumns(1, FIRESTORE_BOOKING_HEADERS.length);
+
+  const result = {
+    spreadsheetId: spreadsheet.getId(),
+    url: spreadsheet.getUrl(),
+    exportedCount: rows.length - 1
+  };
+  console.log(JSON.stringify(result));
+  return result;
+}
+
 function ensureBookingMetadataColumns_(sheetInfo) {
   const missingHeaders = [];
   if (sheetInfo.columns.email < 0) missingHeaders.push('email');

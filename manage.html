@@ -100,7 +100,28 @@
                 </div>
                 <div class="mt-3 flex flex-wrap gap-4 text-xs text-slate-600">
                     <span class="inline-flex items-center gap-2"><span class="h-3 w-3 rounded-sm bg-yellow-400"></span>รอยืนยัน (booking)</span>
-                    <span class="inline-flex items-center gap-2"><span class="h-3 w-3 rounded-sm bg-emerald-600"></span>ยืนยันแล้ว (confirmed)</span>
+                    <span class="inline-flex items-center gap-2"><span class="h-3 w-3 rounded-sm border border-rose-300 bg-rose-100"></span>ยืนยันแล้ว (confirmed)</span>
+                    <span class="inline-flex items-center gap-2"><span class="h-3 w-3 rounded-sm border border-emerald-300 bg-emerald-100"></span>เข้าพักแล้ว (complete)</span>
+                </div>
+                <div class="mt-5 flex flex-col items-center gap-5 rounded-xl bg-slate-50 p-4 sm:flex-row">
+                    <div id="booking-day-pie" role="img" aria-label="สัดส่วนวันจองตามวันธรรมดาและวันหยุด" class="h-36 w-36 shrink-0 rounded-full border-4 border-white shadow-sm"></div>
+                    <div class="w-full">
+                        <h3 class="font-semibold text-slate-800">วันจองทั้งหมดตามวันในสัปดาห์</h3>
+                        <p class="mt-1 text-xs text-slate-500">ตามปีที่เลือก ไม่รวมรายการยกเลิกและปิดบ้าน</p>
+                        <div class="mt-3 grid gap-2 text-sm sm:max-w-md">
+                            <div class="flex items-center justify-between gap-3">
+                                <span class="inline-flex items-center gap-2"><span class="h-3 w-3 rounded-sm bg-teal-700"></span>วันธรรมดา (จ.-พฤ.)</span>
+                                <strong id="weekday-booking-days" class="text-slate-800">0 วัน (0%)</strong>
+                            </div>
+                            <div class="flex items-center justify-between gap-3">
+                                <span class="inline-flex items-center gap-2"><span class="h-3 w-3 rounded-sm bg-amber-500"></span>วันหยุด (ศ.-ส.-อา.)</span>
+                                <strong id="holiday-booking-days" class="text-slate-800">0 วัน (0%)</strong>
+                            </div>
+                        </div>
+                        <p class="mt-3 border-t border-slate-200 pt-2 text-sm text-slate-700">
+                            รวม <strong id="total-booking-days">0</strong> วัน
+                        </p>
+                    </div>
                 </div>
                 <div id="monthly-chart" role="img" aria-label="กราฟจำนวนวันจองแยกตามเดือน" class="mt-5 grid grid-cols-6 gap-x-2 gap-y-4 sm:grid-cols-12 sm:gap-x-3"></div>
             </section>
@@ -320,11 +341,14 @@
                 <button id="close-create-booking" type="button" class="rounded-lg px-3 py-1 text-2xl leading-none text-slate-500 hover:bg-slate-100" aria-label="ปิด">&times;</button>
             </div>
             <div class="grid gap-4 sm:grid-cols-2">
-                <label class="text-sm font-medium sm:col-span-2">สถานะ
-                    <select id="create-status" required class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2">
-                        <option value="booking">booking — รอยืนยัน</option>
-                        <option value="close-ปิดบ้าน">Close-ปิดบ้าน (ปิดวันไม่ให้จอง)</option>
-                    </select>
+                <label class="text-sm font-medium">ชื่อผู้จอง
+                    <input id="create-name" required maxlength="200" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2">
+                </label>
+                <label class="text-sm font-medium">เบอร์โทรศัพท์
+                    <input id="create-phone" required maxlength="50" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2">
+                </label>
+                <label class="text-sm font-medium">อีเมล
+                    <input id="create-email" type="email" required maxlength="254" autocomplete="email" placeholder="name@example.com" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2">
                 </label>
                 <label class="text-sm font-medium">วันเข้าพัก
                     <input id="create-checkin" type="date" required class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2">
@@ -335,22 +359,17 @@
                 <label class="text-sm font-medium">จำนวนคืน
                     <input id="create-nights" readonly class="mt-1 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-slate-600">
                 </label>
-                <div id="create-guest-details" class="col-span-2 grid gap-4 sm:grid-cols-2">
-                    <label class="text-sm font-medium">ชื่อผู้จอง
-                        <input id="create-name" required maxlength="200" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2">
-                    </label>
-                    <label class="text-sm font-medium">เบอร์โทรศัพท์
-                        <input id="create-phone" required maxlength="50" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2">
-                    </label>
-                    <label class="text-sm font-medium sm:col-span-2">อีเมล
-                        <input id="create-email" type="email" required maxlength="254" autocomplete="email" placeholder="name@example.com" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2">
-                    </label>
-                    <label class="text-sm font-medium">จำนวนผู้เข้าพัก
-                        <input id="create-people" type="number" step="1" value="12" required inputmode="numeric" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2">
-                    </label>
-                </div>
-                <label class="text-sm font-medium sm:col-span-2">ยอดชำระ (บาท)
+                <label class="text-sm font-medium">จำนวนผู้เข้าพัก
+                    <input id="create-people" type="number" step="1" value="12" required inputmode="numeric" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2">
+                </label>
+                <label class="text-sm font-medium">ยอดชำระ (บาท)
                     <input id="create-price" readonly required class="mt-1 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-slate-600">
+                </label>
+                <label class="text-sm font-medium">สถานะ
+                    <select id="create-status" required class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2">
+                        <option value="booking">booking — รอยืนยัน</option>
+                        <option value="close-ปิดบ้าน">Close-ปิดบ้าน (ปิดวันไม่ให้จอง)</option>
+                    </select>
                 </label>
                 <label class="text-sm font-medium sm:col-span-2">คำขอเพิ่มเติม
                     <textarea id="create-comment" rows="3" maxlength="5000" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"></textarea>
@@ -681,9 +700,55 @@
             select.value = String(years.has(selectedYear) ? selectedYear : new Date().getFullYear());
         }
 
+        function getBookingDayTypeTotals(year) {
+            const yearStart = formatCalendarDate(year, 0, 1);
+            const yearEnd = formatCalendarDate(year + 1, 0, 1);
+            return bookings.reduce((totals, booking) => {
+                const status = normalizeStatus(booking.status);
+                if (status === 'cancel' || status === 'close' || status === 'close-ปิดบ้าน' ||
+                    !booking.checkIn || !booking.checkOut || booking.checkOut <= booking.checkIn) {
+                    return totals;
+                }
+
+                const start = booking.checkIn < yearStart ? yearStart : booking.checkIn;
+                const end = booking.checkOut > yearEnd ? yearEnd : booking.checkOut;
+                for (let day = Date.parse(`${start}T00:00:00Z`);
+                    day < Date.parse(`${end}T00:00:00Z`);
+                    day += 86400000) {
+                    const dayOfWeek = new Date(day).getUTCDay();
+                    if (dayOfWeek === 0 || dayOfWeek >= 5) {
+                        totals.holiday++;
+                    } else {
+                        totals.weekday++;
+                    }
+                }
+                return totals;
+            }, { weekday: 0, holiday: 0 });
+        }
+
+        function renderBookingDayTypePie(year) {
+            const totals = getBookingDayTypeTotals(year);
+            const totalDays = totals.weekday + totals.holiday;
+            const weekdayPercent = totalDays ? Math.round(totals.weekday / totalDays * 100) : 0;
+            const holidayPercent = totalDays ? 100 - weekdayPercent : 0;
+            const weekdayColor = '#0f766e';
+            const holidayColor = '#f59e0b';
+            const pie = byId('booking-day-pie');
+
+            pie.style.background = totalDays
+                ? `conic-gradient(${weekdayColor} 0% ${weekdayPercent}%, ${holidayColor} ${weekdayPercent}% 100%)`
+                : '#e2e8f0';
+            pie.setAttribute('aria-label',
+                `ปี ${year + 543}: วันธรรมดา ${totals.weekday} วัน, วันหยุด ${totals.holiday} วัน, รวม ${totalDays} วัน`);
+            byId('weekday-booking-days').textContent = `${totals.weekday} วัน (${weekdayPercent}%)`;
+            byId('holiday-booking-days').textContent = `${totals.holiday} วัน (${holidayPercent}%)`;
+            byId('total-booking-days').textContent = String(totalDays);
+        }
+
         function renderMonthlyChart() {
             updateMonthlyChartYearOptions();
             const year = Number(byId('monthly-chart-year').value);
+            renderBookingDayTypePie(year);
             const months = [
                 { label: 'ม.ค.', index: 0 }, { label: 'ก.พ.', index: 1 },
                 { label: 'มี.ค.', index: 2 }, { label: 'เม.ย.', index: 3 },
@@ -705,15 +770,20 @@
                     confirmedDays: bookings.reduce((total, item) =>
                         total + (normalizeStatus(item.status) === 'confirmed'
                             ? getBookingDays(item, monthStart, monthEnd)
+                            : 0), 0),
+                    completeDays: bookings.reduce((total, item) =>
+                        total + (normalizeStatus(item.status) === 'complete'
+                            ? getBookingDays(item, monthStart, monthEnd)
                             : 0), 0)
                 };
             });
-            const maxDays = Math.max(1, ...data.map(item => item.bookingDays + item.confirmedDays));
+            const maxDays = Math.max(1, ...data.map(item =>
+                item.bookingDays + item.confirmedDays + item.completeDays));
             const chart = byId('monthly-chart');
             chart.replaceChildren();
 
             data.forEach(item => {
-                const totalDays = item.bookingDays + item.confirmedDays;
+                const totalDays = item.bookingDays + item.confirmedDays + item.completeDays;
                 const column = document.createElement('div');
                 column.className = 'flex min-w-0 flex-col items-center gap-1';
 
@@ -732,23 +802,30 @@
                     bar.className = 'flex w-full max-w-8 flex-col justify-end overflow-hidden rounded-t-md';
                     bar.style.height = `${barHeight}px`;
                     bar.setAttribute('aria-hidden', 'true');
+                    if (item.completeDays) {
+                        const completeSegment = document.createElement('div');
+                        completeSegment.className = 'w-full bg-emerald-200';
+                        completeSegment.style.flex = `${item.completeDays} 1 0%`;
+                        bar.appendChild(completeSegment);
+                    }
                     if (item.confirmedDays) {
                         const confirmedSegment = document.createElement('div');
-                        confirmedSegment.className = 'w-full bg-emerald-600';
-                        confirmedSegment.style.height = `${Math.max(1, Math.round(barHeight * item.confirmedDays / totalDays))}px`;
+                        confirmedSegment.className = 'w-full bg-rose-200';
+                        confirmedSegment.style.flex = `${item.confirmedDays} 1 0%`;
                         bar.appendChild(confirmedSegment);
                     }
                     if (item.bookingDays) {
                         const bookingSegment = document.createElement('div');
                         bookingSegment.className = 'w-full bg-yellow-400';
-                        bookingSegment.style.height = `${Math.max(1, barHeight - Math.round(barHeight * item.confirmedDays / totalDays))}px`;
+                        bookingSegment.style.flex = `${item.bookingDays} 1 0%`;
                         bar.appendChild(bookingSegment);
                     }
                     track.appendChild(bar);
                 }
 
                 track.setAttribute('aria-label',
-                    `${item.label}: รวม ${totalDays} วัน, รอยืนยัน ${item.bookingDays} วัน, ยืนยันแล้ว ${item.confirmedDays} วัน`);
+                    `${item.label}: รวม ${totalDays} วัน, รอยืนยัน ${item.bookingDays} วัน, ` +
+                    `ยืนยันแล้ว ${item.confirmedDays} วัน, เข้าพักแล้ว ${item.completeDays} วัน`);
                 column.appendChild(track);
                 const monthLabel = document.createElement('span');
                 monthLabel.className = 'text-[10px] font-medium text-slate-600 sm:text-xs';
@@ -1089,10 +1166,11 @@
 
         function updateCreateBookingMode() {
             const isHouseClosed = normalizeStatus(byId('create-status').value) === 'close-ปิดบ้าน';
-            byId('create-guest-details').classList.toggle('hidden', isHouseClosed);
             ['create-name', 'create-phone', 'create-email', 'create-people'].forEach(id => {
-                byId(id).required = !isHouseClosed;
-                byId(id).disabled = isHouseClosed;
+                const input = byId(id);
+                input.required = !isHouseClosed;
+                input.disabled = isHouseClosed;
+                input.closest('label').classList.toggle('hidden', isHouseClosed);
             });
             byId('create-email').setCustomValidity('');
             byId('save-create-booking').textContent = isHouseClosed ? 'ปิดบ้านตามวันที่' : 'บันทึกการจอง';
