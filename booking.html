@@ -5,8 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>บ้านชายหาด - ที่พักติดทะเล แหลมเจริญ หาดแสงจันทร์ ระยอง</title>
     <link rel="icon" type="image/jpeg" href="image/logo.jpg">
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="./tailwind.css">
     <!-- Google Fonts: Prompt & Playfair Display -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,36 +13,6 @@
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        ocean: {
-                            50: '#f0fdfa',
-                            100: '#ccfbf1',
-                            500: '#14b8a6',
-                            700: '#0f766e',
-                            800: '#115e59',
-                            900: '#134e4a',
-                        },
-                        sand: {
-                            50: '#fdfbf7',
-                            100: '#f7f2e7',
-                            200: '#ece0c8',
-                            500: '#d4a359',
-                            600: '#b88339',
-                        },
-                        deepnavy: '#0b192c'
-                    },
-                    fontFamily: {
-                        prompt: ['Prompt', 'sans-serif'],
-                        serif: ['Playfair Display', 'serif'],
-                    }
-                }
-            }
-        }
-    </script>
     <style>
         body {
             font-family: 'Prompt', sans-serif;
@@ -954,20 +923,19 @@
                 dayCell.className = baseClass;
 
                 const priceBadge = !isPast && !isOutsideBookingWindow && !isBooked ?
-                    `<span class="hidden whitespace-nowrap text-[10px] sm:inline ${isWeekendRate ? 'text-amber-600 font-bold' : 'text-slate-500'}">฿${(isWeekendRate ? WEEKEND_RATE : WEEKDAY_RATE).toLocaleString('th-TH')}</span>` : '';
+                    `<span class="hidden w-full whitespace-nowrap text-left text-[10px] sm:block ${isWeekendRate ? 'text-amber-600 font-bold' : 'text-slate-500'}">฿${(isWeekendRate ? WEEKEND_RATE : WEEKDAY_RATE).toLocaleString('th-TH')}</span>` : '';
 
                 const statusLabel = isHouseClosed
-                    ? '<span class="block w-full break-words text-center text-[7px] leading-tight font-bold text-slate-800 sm:text-[10px]">Close-ปิดบ้าน</span>'
+                    ? '<span class="block w-full break-words text-left text-[7px] leading-tight font-bold text-slate-800 sm:text-[10px]">Close-ปิดบ้าน</span>'
                     : isBooked
-                    ? '<span class="text-[10px] font-bold text-rose-600">ไม่ว่าง</span>'
+                    ? '<span class="block w-full text-left text-[10px] font-bold text-rose-600">ไม่ว่าง</span>'
                     : priceBadge;
 
                 dayCell.innerHTML = `
-                    <div class="flex justify-between items-start w-full">
+                    <div class="flex h-full w-full flex-col justify-between">
                         <span class="font-bold text-sm ${isWeekendRate && !isBooked && !isPast ? 'text-ocean-700' : ''}">${day}</span>
-                        ${isHouseClosed ? '' : statusLabel}
+                        ${statusLabel}
                     </div>
-                    ${isHouseClosed ? statusLabel : ''}
                 `;
 
                 if (!isPast && !isOutsideBookingWindow && !isBooked) {

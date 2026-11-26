@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>จัดการการจอง | บ้านชายหาด</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="./tailwind.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -105,6 +105,33 @@
                 <div id="monthly-chart" role="img" aria-label="กราฟจำนวนวันจองแยกตามเดือน" class="mt-5 grid grid-cols-6 gap-x-2 gap-y-4 sm:grid-cols-12 sm:gap-x-3"></div>
             </section>
 
+            <section id="status-filter" class="mb-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
+                <h2 class="text-lg font-bold text-slate-900">กรองตามสถานะ</h2>
+                <p class="mt-1 text-xs text-slate-500">เลือกสถานะที่ต้องการแสดงทั้งในปฏิทินและรายการจอง</p>
+                <div class="mt-3 flex flex-wrap gap-x-5 gap-y-3">
+                    <label class="inline-flex items-center gap-2 text-sm text-slate-700">
+                        <input type="checkbox" name="status-filter" value="booking" checked class="rounded border-slate-300 text-teal-700 focus:ring-teal-600">
+                        รอยืนยัน
+                    </label>
+                    <label class="inline-flex items-center gap-2 text-sm text-slate-700">
+                        <input type="checkbox" name="status-filter" value="confirmed" checked class="rounded border-slate-300 text-teal-700 focus:ring-teal-600">
+                        ยืนยันแล้ว
+                    </label>
+                    <label class="inline-flex items-center gap-2 text-sm text-slate-700">
+                        <input type="checkbox" name="status-filter" value="complete" checked class="rounded border-slate-300 text-teal-700 focus:ring-teal-600">
+                        เข้าพักแล้ว
+                    </label>
+                    <label class="inline-flex items-center gap-2 text-sm text-slate-700">
+                        <input type="checkbox" name="status-filter" value="close-ปิดบ้าน" checked class="rounded border-slate-300 text-teal-700 focus:ring-teal-600">
+                        Close-ปิดบ้าน
+                    </label>
+                    <label class="inline-flex items-center gap-2 text-sm text-slate-700">
+                        <input type="checkbox" name="status-filter" value="cancel" class="rounded border-slate-300 text-teal-700 focus:ring-teal-600">
+                        ยกเลิก
+                    </label>
+                </div>
+            </section>
+
             <section class="mb-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
                 <div class="flex flex-wrap items-center justify-between gap-3">
                     <div>
@@ -145,14 +172,6 @@
                     </div>
                     <div class="flex flex-col gap-2 sm:flex-row">
                         <input id="search-input" type="search" placeholder="ค้นหารหัส ชื่อ เบอร์โทร หรืออีเมล" class="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-teal-600 focus:outline-none">
-                        <select id="status-filter" class="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-teal-600 focus:outline-none">
-                            <option value="all">ทุกสถานะ</option>
-                            <option value="booking">รอยืนยัน</option>
-                            <option value="confirmed">ยืนยันแล้ว</option>
-                            <option value="complete">เข้าพักแล้ว</option>
-                            <option value="close-ปิดบ้าน">Close-ปิดบ้าน</option>
-                            <option value="cancel">ยกเลิก</option>
-                        </select>
                         <button id="new-booking-button" type="button" class="whitespace-nowrap rounded-lg bg-teal-700 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-800">+ เพิ่มการจอง</button>
                     </div>
                 </div>
@@ -752,6 +771,13 @@
                 });
         }
 
+        function getSelectedStatuses() {
+            return new Set(Array.from(
+                byId('status-filter').querySelectorAll('input[name="status-filter"]:checked'),
+                input => normalizeStatus(input.value)
+            ));
+        }
+
         function getCalendarStatus(dayBookings) {
             if (dayBookings.some(booking => normalizeStatus(booking.status) === 'close-ปิดบ้าน')) return 'close-ปิดบ้าน';
             if (dayBookings.some(booking => normalizeStatus(booking.status) === 'complete')) return 'complete';
@@ -761,6 +787,7 @@
         }
 
         function renderCalendar() {
+            const selectedStatuses = getSelectedStatuses();
             const monthName = getCalendarMonthName();
             byId('calendar-month-year').textContent = `${monthName} ${calendarYear + 543}`;
             byId('booking-month-title').textContent = `รายการจองเดือน${monthName} ${calendarYear + 543}`;
@@ -781,7 +808,8 @@
 
             for (let day = 1; day <= daysInMonth; day++) {
                 const date = formatCalendarDate(calendarYear, calendarMonth, day);
-                const dayBookings = getBookingsForDate(date);
+                const dayBookings = getBookingsForDate(date).filter(booking =>
+                    selectedStatuses.has(normalizeStatus(booking.status)));
                 const multiDayConfirmedBookings = dayBookings.filter(booking =>
                     normalizeStatus(booking.status) === 'confirmed' && getBookingDays(booking) > 1);
                 const status = getCalendarStatus(dayBookings);
@@ -858,7 +886,7 @@
 
         function renderBookings() {
             const query = byId('search-input').value.trim().toLowerCase();
-            const statusFilter = byId('status-filter').value;
+            const selectedStatuses = getSelectedStatuses();
             const selectedDateBookingIds = selectedCalendarDate
                 ? new Set(getBookingsForDate(selectedCalendarDate)
                     .map(booking => String(booking.id || '').trim())
@@ -873,7 +901,7 @@
             const filtered = monthBookings.filter(booking => {
                 const matchesQuery = [booking.id, booking.name, booking.phone, booking.email, booking.bookBy].some(value =>
                     String(value || '').toLowerCase().includes(query));
-                const matchesStatus = statusFilter === 'all' || normalizeStatus(booking.status) === statusFilter;
+                const matchesStatus = selectedStatuses.has(normalizeStatus(booking.status));
                 const matchesSelectedDate = selectedDateBookingIds === null ||
                     selectedDateBookingIds.has(String(booking.id || '').trim());
                 return matchesQuery && matchesStatus && matchesSelectedDate;
@@ -1517,6 +1545,12 @@
             setTimeout(() => notice.classList.add('hidden'), 5000);
         }
 
+        function refreshBookings() {
+            selectedCalendarDate = '';
+            renderBookings();
+            loadBookings(true);
+        }
+
         byId('login-form').addEventListener('submit', loginAdmin);
         byId('search-input').addEventListener('input', renderBookings);
         byId('status-filter').addEventListener('change', renderBookings);
@@ -1524,8 +1558,8 @@
         byId('calendar-previous').addEventListener('click', () => changeCalendarMonth(-1));
         byId('calendar-current').addEventListener('click', showCurrentCalendarMonth);
         byId('calendar-next').addEventListener('click', () => changeCalendarMonth(1));
-        byId('refresh-button').addEventListener('click', () => loadBookings(true));
-        byId('calendar-refresh').addEventListener('click', () => loadBookings(true));
+        byId('refresh-button').addEventListener('click', refreshBookings);
+        byId('calendar-refresh').addEventListener('click', refreshBookings);
         byId('signout-button').addEventListener('click', () => signOut());
         byId('bookings-tab').addEventListener('click', () => showPanel('bookings'));
         byId('users-tab').addEventListener('click', () => showPanel('users'));
